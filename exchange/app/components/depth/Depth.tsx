@@ -16,21 +16,25 @@ export function Depth({ market }: {market: string}) {
             
             setBids((originalBids) => {
                 const bidsAfterUpdate = [...(originalBids || [])];
-
+                if(bidsAfterUpdate.length === 0) {
+                    return data.bids;
+                }
                 for (let i = 0; i < bidsAfterUpdate.length; i++) {
-                    for (let j = 0; j < data.bids.length; j++)  {
-                        if (bidsAfterUpdate[i][0] === data.bids[j][0]) {
-                            bidsAfterUpdate[i][1] = data.bids[j][1];
-                            break;
-                        }
+                if (data?.bids && Array.isArray(data.bids)) {
+                for (let j = 0; j < data.bids.length; j++) {
+                    if (bidsAfterUpdate[i][0] === data.bids[j][0]) {
+                    bidsAfterUpdate[i][1] = data.bids[j][1];
+                    break;
                     }
                 }
+                }
+            }
                 return bidsAfterUpdate; 
             });
 
             setAsks((originalAsks) => {
                 const asksAfterUpdate = [...(originalAsks || [])];
-
+                if(data?.asks && Array.isArray(data.asks)){
                 for (let i = 0; i < asksAfterUpdate.length; i++) {
                     for (let j = 0; j < data.asks.length; j++)  {
                         if (asksAfterUpdate[i][0] === data.asks[j][0]) {
@@ -38,7 +42,7 @@ export function Depth({ market }: {market: string}) {
                             break;
                         }
                     }
-                }
+                }}
                 return asksAfterUpdate; 
             });
         }, `DEPTH-${market}`);
