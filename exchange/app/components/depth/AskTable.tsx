@@ -7,16 +7,17 @@ export const AskTable = ({ asks }: { asks: [string, string][] }) => {
     const maxTotal = relevantAsks.reduce((acc, [_, quantity]) => acc + Number(quantity), 0);
     asksWithTotal.reverse();
 
-    return <div>
-        {asksWithTotal.map(([price, quantity, total]) => <Ask maxTotal={maxTotal} key={price} price={price} quantity={quantity} total={total} />)}
+    return <div className="h-full">
+        {asksWithTotal.map(([price, quantity, total]) => <Ask maxTotal={maxTotal} key={price} price={price} quantity={quantity} total={total} noOfAsk={asks.length}/>)}
     </div>
 }
-function Ask({price, quantity, total, maxTotal}: {price: string, quantity: string, total: number, maxTotal: number}) {
+function Ask({price, quantity, total, maxTotal,noOfAsk}: {price: string, quantity: string, total: number, maxTotal: number,noOfAsk:number}) {
     return <div
     style={{
         display: "flex",
         position: "relative",
         width: "100%",
+        height: `${(100 / Math.min(noOfAsk))}%`,
         backgroundColor: "transparent",
         overflow: "hidden",
     }}

@@ -5,18 +5,19 @@ export const BidTable = ({ bids }: {bids: [string, string][]}) => {
     const bidsWithTotal: [string, string, number][] = relevantBids.map(([price, quantity]) => [price, quantity, currentTotal += Number(quantity)]);
     const maxTotal = relevantBids.reduce((acc, [_, quantity]) => acc + Number(quantity), 0);
 
-    return <div>
-        {bidsWithTotal?.map(([price, quantity, total]) => <Bid maxTotal={maxTotal} total={total} key={price} price={price} quantity={quantity} />)}
+    return <div className="h-full">
+        {bidsWithTotal?.map(([price, quantity, total]) => <Bid maxTotal={maxTotal} total={total} key={price} price={price} quantity={quantity} noOfBits={bids.length} />)}
     </div>
 }
 
-function Bid({ price, quantity, total, maxTotal }: { price: string, quantity: string, total: number, maxTotal: number }) {
+function Bid({ price, quantity, total, maxTotal,noOfBits }: { price: string, quantity: string, total: number, maxTotal: number, noOfBits:number }) {
     return (
         <div
             style={{
                 display: "flex",
                 position: "relative",
-                width: "100%",
+                width: "100%", 
+                height: `${(100 / Math.min(noOfBits))}%`,
                 backgroundColor: "transparent",
                 overflow: "hidden",
             }}
