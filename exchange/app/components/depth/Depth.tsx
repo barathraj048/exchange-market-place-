@@ -9,34 +9,28 @@ import { SignalingManager } from "@/app/utils/SignalingManager";
 export function Depth({ market }: {market: string}) {
     const [bids, setBids] = useState<[string, string][]>();
     const [asks, setAsks] = useState<[string, string][]>();
-    const [price, setPrice] = useState<string>();
+    const [currprice, setPrice] = useState<string>();
 
 useEffect(() => {
     const callback = (data: any) => {
         setBids((originalBids) => {
             const bidsAfterUpdate = [...(originalBids || [])];
-            
-            // If this is the first data, just return it
             if (bidsAfterUpdate.length === 0 && data.bids) {
                 return data.bids;
             }
             
-            // Update existing bids
             if (data?.bids && Array.isArray(data.bids)) {
                 for (let j = 0; j < data.bids.length; j++) {
                     const [price, quantity] = data.bids[j];
                     const existingIndex = bidsAfterUpdate.findIndex(bid => bid[0] === price);
                     
                     if (existingIndex !== -1) {
-                        // Update existing bid
                         if (parseFloat(quantity) === 0) {
-                            // Remove if quantity is 0
                             bidsAfterUpdate.splice(existingIndex, 1);
                         } else {
                             bidsAfterUpdate[existingIndex][1] = quantity;
                         }
                     } else if (parseFloat(quantity) > 0) {
-                        // Add new bid
                         bidsAfterUpdate.push([price, quantity]);
                     }
                 }
@@ -47,28 +41,22 @@ useEffect(() => {
 
         setAsks((originalAsks) => {
             const asksAfterUpdate = [...(originalAsks || [])];
-            
-            // If this is the first data, just return it
             if (asksAfterUpdate.length === 0 && data.asks) {
                 return data.asks;
             }
             
-            // Update existing asks
             if (data?.asks && Array.isArray(data.asks)) {
                 for (let j = 0; j < data.asks.length; j++) {
                     const [price, quantity] = data.asks[j];
                     const existingIndex = asksAfterUpdate.findIndex(ask => ask[0] === price);
                     
                     if (existingIndex !== -1) {
-                        // Update existing ask
                         if (parseFloat(quantity) === 0) {
-                            // Remove if quantity is 0
                             asksAfterUpdate.splice(existingIndex, 1);
                         } else {
                             asksAfterUpdate[existingIndex][1] = quantity;
                         }
                     } else if (parseFloat(quantity) > 0) {
-                        // Add new ask
                         asksAfterUpdate.push([price, quantity]);
                     }
                 }
@@ -80,19 +68,22 @@ useEffect(() => {
     const type= "depth"
     const id = `DEPTH-${market}`;
     SignalingManager.getInstance().registerCallback(type, callback, id);
+    SignalingManager.getInstance().registerCallback("ticker",(data:any)=> {
+        setPrice(data?.lastPrice)},`ticker-${market}`)
     SignalingManager.getInstance().sendMessage({"method":"SUBSCRIBE","params":[`depth.${market}`]});
+    SignalingManager.getInstance().sendMessage({"method":"SUBSCRIBE","params":[`ticker.${market}`]});
 
     return () => {
         SignalingManager.getInstance().sendMessage({"method":"UNSUBSCRIBE","params":[`depth.200ms.${market}`]});
         SignalingManager.getInstance().deRegisterCallback("depth", `DEPTH-${market}`);
+                SignalingManager.getInstance().sendMessage({"method":"UNSUBSCRIBE","ticker":[`ticker.200ms.${market}`]});
+        SignalingManager.getInstance().deRegisterCallback("ticker", `ticker-${market}`);
     };
 }, [market]);
-    console.log("Bids:", bids);
-    console.log("Asks:", asks);
     return <div>
         <TableHeader />
         {asks && <AskTable asks={asks} />}
-        {price && <div>{price}</div>}
+        {currprice && <div className="p-1">{currprice} LastExchange</div>}
         {bids && <BidTable bids={bids} />}
     </div>
 }

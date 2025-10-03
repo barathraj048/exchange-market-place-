@@ -1,4 +1,4 @@
-import { Ticker ,Depth} from "./types";
+import { Ticker ,Depth, Trade} from "./types";
 
 
 export const BASE_URL = "wss://ws.backpack.exchange/"
@@ -51,11 +51,20 @@ export class SignalingManager {
                         callback(newTicker);
                    }
                    if (type === "depth") {
-                    console.log("Depth message received:", message);
                     const depthData:Partial<Depth> = {
                         bids: message.data.b,
                         asks: message.data.a,}
                     callback(depthData);
+                   }
+                   if (type === "trade") {
+                    console.log("Trade message received:", message);
+                    const tradeData :Partial<Trade> = {
+                        price: message.data.p,
+                        quantity: message.data.q,
+                        isBuyerMaker: message.data.m,
+                        timestamp: message.data.t,
+                    }
+                    callback(tradeData);
                    }
                 });
             }

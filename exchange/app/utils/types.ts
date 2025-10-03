@@ -1,3 +1,4 @@
+import exp from "constants";
 
 export interface KLine {
     close: string;
@@ -25,6 +26,8 @@ export interface Depth {
     asks: [string, string][],
     lastUpdateId: string
 }
+
+
 
 export interface Ticker {
     "firstPrice": string,
