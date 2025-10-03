@@ -1,4 +1,5 @@
-import { Ticker } from "./types";
+import { Ticker ,Depth} from "./types";
+
 
 export const BASE_URL = "wss://ws.backpack.exchange/"
 
@@ -49,6 +50,13 @@ export class SignalingManager {
 
                         callback(newTicker);
                    }
+                   if (type === "depth") {
+                    console.log("Depth message received:", message);
+                    const depthData:Partial<Depth> = {
+                        bids: message.data.b,
+                        asks: message.data.a,}
+                    callback(depthData);
+                   }
                 });
             }
         }
@@ -69,7 +77,6 @@ export class SignalingManager {
     async registerCallback(type: string, callback: any, id: string) {
         this.callbacks[type] = this.callbacks[type] || [];
         this.callbacks[type].push({ callback, id });
-        // "ticker" => callback
     }
 
     async deRegisterCallback(type: string, id: string) {

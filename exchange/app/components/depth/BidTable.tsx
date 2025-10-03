@@ -5,7 +5,7 @@ export const BidTable = ({ bids }: {bids: [string, string][]}) => {
     const bidsWithTotal: [string, string, number][] = relevantBids.map(([price, quantity]) => [price, quantity, currentTotal += Number(quantity)]);
     const maxTotal = relevantBids.reduce((acc, [_, quantity]) => acc + Number(quantity), 0);
 
-    return <div className="h-full">
+    return <div className="h-fit">
         {bidsWithTotal?.map(([price, quantity, total]) => <Bid maxTotal={maxTotal} total={total} key={price} price={price} quantity={quantity} noOfBits={bids.length} />)}
     </div>
 }
@@ -17,7 +17,7 @@ function Bid({ price, quantity, total, maxTotal,noOfBits }: { price: string, qua
                 display: "flex",
                 position: "relative",
                 width: "100%", 
-                height: `${(100 / Math.min(noOfBits))}%`,
+                height: `${(100 / Math.min(noOfBits,15))}%`,
                 backgroundColor: "transparent",
                 overflow: "hidden",
             }}
@@ -33,7 +33,7 @@ function Bid({ price, quantity, total, maxTotal,noOfBits }: { price: string, qua
             transition: "width 0.3s ease-in-out",
             }}
         ></div>
-            <div className={`flex justify-between text-xs w-full`}>
+            <div className={`flex justify-between text-xs w-full py-1 px-1`}>
                 <div>
                     {price}
                 </div>
