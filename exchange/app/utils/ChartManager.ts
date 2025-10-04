@@ -60,12 +60,18 @@ export class ChartManager {
     this.chart = chart;
     this.candleSeries = chart.addCandlestickSeries();
 
-    this.candleSeries.setData(
-      initialData.map((data) => ({
-        ...data,
-        time: (data.timestamp / 1000) as UTCTimestamp,
-      }))
-    );
+this.candleSeries.setData(
+  initialData
+    .map((data) => ({
+      ...data,
+      time: (data.timestamp / 1000) as UTCTimestamp,
+    }))
+    // Sort ascending by time
+    .sort((a, b) => a.time - b.time)
+    // Remove duplicates (same timestamp)
+    .filter((item, index, arr) => index === 0 || item.time > arr[index - 1].time)
+);
+
   }
   public update(updatedPrice: any) {
     if (!this.lastUpdateTime) {

@@ -1,4 +1,4 @@
-import { Ticker ,Depth, Trade} from "./types";
+import { Ticker ,Depth, Trade ,KLine} from "./types";
 
 
 export const BASE_URL = "wss://ws.backpack.exchange/"
@@ -65,6 +65,21 @@ export class SignalingManager {
                         timestamp: message.data.t,
                     }
                     callback(tradeData);
+                   }
+                   if(type === "kline") {
+                    const kline = message.data;
+                    const klineData :Partial<KLine> = {
+                        open: kline.o,
+                        high: kline.h,
+                        low: kline.l,
+                        close: kline.c,
+                        volume: kline.v,
+                        quoteVolume: kline.V,    
+                        trades: kline.n,            
+                        start: kline.s,
+                        end: kline.t
+                    }
+                    callback(klineData);
                    }
                 });
             }

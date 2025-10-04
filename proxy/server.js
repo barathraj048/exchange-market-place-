@@ -100,7 +100,7 @@ app.get('/klines', (req, res) => {
   res.json(generateKlines(103));
 });
 
-const port = 3000; // ✅ match frontend BASE_URL
+const port = 3001; // ✅ match frontend BASE_URL
 app.listen(port, () =>
   console.log(`✅ Backend aligned with frontend at http://localhost:${port}`)
 );
