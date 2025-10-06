@@ -99,10 +99,8 @@ export function TradeView({ market }: { market: string }) {
       }
     };
   }, [klineData, isLoading]);
-
-  // Subscribe to real-time WebSocket kline updates
   useEffect(() => {
-    if (isLoading || klineData.length === 0) return; // Wait for historical data first
+    if (isLoading || klineData.length === 0) return; 
 
     const type = "kline";
     const id = `kline-${market}`;
@@ -112,7 +110,6 @@ export function TradeView({ market }: { market: string }) {
       console.log("Real-time kline update:", data);
 
       setKlineData((prevKlines) => {
-        // Find if this candle already exists (same end timestamp)
         const existingIndex = prevKlines.findIndex(
           (k) => k.end.toString() === data.end.toString()
         );
