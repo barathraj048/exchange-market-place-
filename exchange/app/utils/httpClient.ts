@@ -12,10 +12,11 @@ export async function getTicker(market: string): Promise<Ticker> {
     return ticker;
 }
 
-export async function getTickers(): Promise<Ticker[]> {
-    const response = await axios.get(`${BASE_URL}/tickers`);
-    return response.data;
-}
+export const getTickers = async (): Promise<any[]> => {
+  const response = await axios.get("/api/proxyTicker");
+  return response.data;
+};
+
 
 
 export async function getDepth(market: string): Promise<Depth> {
@@ -24,6 +25,10 @@ export async function getDepth(market: string): Promise<Depth> {
 }
 export async function getTrades(market: string): Promise<Trade[]> {
     const response = await axios.get(`${BASE_URL}/trades?symbol=${market}`);
+    return response.data;
+}
+export const getMarkets =async() :Promise<[]>=> {
+    const response = await axios.get(`/api/proxyMarket`);
     return response.data;
 }
 

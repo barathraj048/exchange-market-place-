@@ -1,61 +1,85 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getTickers } from "../utils/httpClient";
 
-interface Market {
+interface Ticker {
   symbol: string;
-  baseSymbol: string;
-  quoteSymbol: string;
-  price?: number;
-  volume24h?: number;
-  marketCap?: number;
-  change24h?: number;
+  firstPrice: string;
+  lastPrice: string;
+  high: string;
+  low: string;
+  priceChange: string;
+  priceChangePercent: string;
+  volume: string;
+  quoteVolume: string;
+  trades: string;
 }
 
 function MarketDetails() {
   const [loading, setLoading] = useState(true);
-  const [markets, setMarkets] = useState<Market[]>([]);
+  const [tickers, setTickers] = useState<Ticker[]>([]);
+  const router = useRouter(); // Next.js router
 
   useEffect(() => {
-    const fetchMarket = async () => {
+    const fetchTickers = async () => {
       try {
-        const res = await fetch("https://your-api.com/api/v1/markets");
-        const data = await res.json();
-        setMarkets(data.slice(0, 20)); // first 20 markets
-        console.log(data);
+        const data = await getTickers();
+
+        // sort by quoteVolume descending
+        const sorted = data.sort(
+          (a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)
+        );
+
+        setTickers(sorted.slice(0, 20));
       } catch (err) {
-        console.log(err);
+        console.error("Error fetching tickers:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMarket();
+    fetchTickers();
   }, []);
 
   if (loading) return <div className="text-gray-400">Loading...</div>;
 
   return (
     <div>
-      {markets.map((mkt) => (
-        <div
-          key={mkt.symbol}
-          className="flex justify-between text-gray-400 mb-4 w-full px-4"
-        >
-          <p className="w-1/5">
-            {mkt.baseSymbol}/{mkt.quoteSymbol}
-          </p>
-          <p className="w-1/5 text-right">{mkt.price ?? "—"}</p>
-          <p className="w-1/5 text-right">{mkt.volume24h ?? "—"}</p>
-          <p className="w-1/5 text-right">{mkt.marketCap ?? "—"}</p>
-          <p
-            className={`w-1/5 text-right ${
-              (mkt.change24h ?? 0) > 0 ? "text-green-400" : "text-red-400"
-            }`}
+      {tickers.map((t) => {
+        const {
+          symbol,
+          lastPrice,
+          high,
+          low,
+          priceChange,
+          priceChangePercent,
+          volume,
+          quoteVolume,
+        } = t;
+
+        const [baseSymbol, quoteSymbol] = symbol.split("_");
+
+        return (
+          <div
+            key={symbol}
+            onClick={() => router.push(`/trade/${symbol}`)}
+            className="flex justify-between text-gray-400 pt-4 w-full px-4 border-b border-gray-700 pb-2 cursor-pointer hover:bg-gray-800 transition"
           >
-            {mkt.change24h ?? "—"}%
-          </p>
-        </div>
-      ))}
+            <p className="w-1/5">{baseSymbol}/{quoteSymbol}</p>
+            <p className="w-1/5 text-right">{parseFloat(lastPrice).toFixed(4)}</p>
+            <p className="w-1/5 text-right">{parseFloat(volume).toFixed(2)}</p>
+            <p className="w-1/5 text-right">{parseFloat(quoteVolume).toFixed(2)}</p>
+            <p
+              className={`w-1/5 text-right ${
+                parseFloat(priceChange) > 0 ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {parseFloat(priceChange).toFixed(4)} ({(parseFloat(priceChangePercent)*100).toFixed(2)}%)
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
