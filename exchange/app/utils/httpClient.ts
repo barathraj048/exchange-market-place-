@@ -14,6 +14,7 @@ export async function getTicker(market: string): Promise<Ticker> {
 
 export const getTickers = async (): Promise<any[]> => {
   const response = await axios.get("/api/proxyTicker");
+  console.log(response.data);
   return response.data;
 };
 

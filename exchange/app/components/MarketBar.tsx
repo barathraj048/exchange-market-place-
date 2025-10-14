@@ -72,9 +72,11 @@ export const MarketBar = ({market}: {market: string}) => {
 }
 
 function Ticker({market}: {market: string}) {
+    console.log("Market in Ticker:", market);
+    let img=`http://localhost:3000/api/color/${market.split("_")[0].toLowerCase()}/600`
     return <div className="flex h-[60px] shrink-0 space-x-4">
         <div className="flex flex-row relative ml-2 -mr-4">
-            <img alt="SOL Logo" loading="lazy" decoding="async" data-nimg="1" className="z-10 rounded-full h-6 w-6 mt-4 outline-baseBackgroundL1"  src="/sol.webp" />
+            <img alt="SOL Logo" loading="lazy" decoding="async" data-nimg="1" className="z-10 rounded-full h-6 w-6 mt-4 outline-baseBackgroundL1"  src={img} />
             <img alt="USDC Logo" loading="lazy"decoding="async" data-nimg="1" className="h-6 w-6 -ml-2 mt-4 rounded-full" src="/usdc.webp" />
         </div>
     <button type="button" className="react-aria-Button" data-rac="">
