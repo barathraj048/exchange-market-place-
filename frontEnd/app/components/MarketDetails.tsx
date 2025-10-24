@@ -71,7 +71,7 @@ function MarketDetails() {
                 height={24}
                 className="rounded-full bg-gray-900"
                 onError={(e) => {
-                  e.currentTarget.src = "/default.svg"; // fallback
+                  e.currentTarget.src = "/default.svg"; 
                 }}
               />
               <span className="font-medium">

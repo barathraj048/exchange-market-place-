@@ -5,6 +5,7 @@ export function SwapUI({ market }: {market: string}) {
     const [amount, setAmount] = useState('');
     const [activeTab, setActiveTab] = useState('buy');
     const [type, setType] = useState('limit');
+    let src=`http://localhost:3000/api/color/${market.split("_")[0].toLowerCase()}/600`
 
     return <div>
         <div className="flex flex-col">
@@ -49,7 +50,7 @@ export function SwapUI({ market }: {market: string}) {
                             <input step="0.01" placeholder="0" className="h-12 rounded-lg border-2 border-solid border-baseBorderLight bg-[var(--background)] pr-12 text-right text-2xl leading-9 text-[$text] placeholder-baseTextMedEmphasis ring-0 transition focus:border-accentBlue focus:ring-0" type="text" value="123" />
                             <div className="flex flex-row absolute right-1 top-1 p-2">
                                 <div className="relative">
-                                    <img src="/sol.webp" className="w-6 h-6" />
+                                    <img loading="lazy" decoding="async" src={src} className="w-6 h-6" />
                                 </div>
                             </div>
                         </div>
