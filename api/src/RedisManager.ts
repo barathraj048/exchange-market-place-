@@ -1,10 +1,12 @@
 import {createClient, RedisClientType} from 'redis'
+import { MessageToEngine } from './types/to'
+import { MessageFromOrderbook } from './types'
 
-export class ResisManaget{
+export class RedisManager{
    private client:RedisClientType
    private publisher:RedisClientType
-   private static instance:ResisManaget
-
+   private static instance:RedisManager
+   
    constructor(){
       this.client=createClient()
       this.client.connect()
@@ -14,13 +16,13 @@ export class ResisManaget{
 
    static getInstances(){  
       if(!this.instance){
-         this.instance=new ResisManaget()
+         this.instance=new RedisManager()
       }
       return this.instance
    }
 
-   public sendAndAwait(message:any){
-      return new Promise((resolve)=> {
+   public sendAndAwait(message:MessageToEngine){
+      return new Promise<MessageFromOrderbook>((resolve)=> {
          const id = this.getRandomClientId()
          this.client.subscribe(id,(message)=> {
             this.client.unsubscribe(id)
