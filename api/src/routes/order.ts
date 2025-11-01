@@ -4,7 +4,7 @@ import { CREATE_ORDER } from "../types";
 
 export const orderRouter = Router();
 
-orderRouter.get("/",async (req, res) => {
+orderRouter.post("/",async (req, res) => {
     const { market, price, quantity, side, userId } = req.body;
     let result =await RedisManager.getInstances().sendAndAwait({
         type :CREATE_ORDER,
