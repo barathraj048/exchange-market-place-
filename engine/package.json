@@ -11,6 +11,10 @@
   "description": "",
   "dependencies": {
     "@types/redis": "^4.0.10",
+    "fs": "^0.0.1-security",
     "redis": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2"
   }
 }
