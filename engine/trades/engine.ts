@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { CreateOrder, MessageFromApi } from '../types/api-types';
 export const BASE_CURRENCY="INR";
 import { orderBook } from './orderBook';
 interface UserBalance {
@@ -45,7 +46,26 @@ export class Engine {
          balance:Array.from(this.balances.entries())
       }
    }
+   process({message,userId}:{message:MessageFromApi,userId:string}) {
+      switch(message.type){
+         case CreateOrder:{
+            let {exicutedQty,fill,price}=this.createOrder(message.data.quantity,message.data.price,message.data.side,message.data.market,userId)
+         }
+      }
+   }
+   createOrder(quantity:number,price:number,side:"BUY" | "SELL",market:string,userId:string) {
+      let base_assert=market.split("_")[0]
+      let quote_assert=market.split("_")[1]
+      let orderBook=this.orderBook.find((o)=> o.base_asset===base_assert && o.quote_asset===quote_assert)
 
+      if (!orderBook) console.log("Order book not found for market:", market)
+      
+      this.checkAndLock()
+   }
+
+   checkAndLock(){
+
+   }
    setBaseBalances() {
         this.balances.set("1", {
             [BASE_CURRENCY]: {
@@ -79,5 +99,6 @@ export class Engine {
                 locked: 0
             }
         });
-    }
+    }   
+   
 }
