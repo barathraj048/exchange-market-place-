@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { CreateOrder, MessageFromApi } from '../types/api-types';
 export const BASE_CURRENCY="INR";
-import { orderBook } from './orderBook';
+import { orderBook,order } from './orderBook';
 interface UserBalance {
    [key:string]:{
       available:number,
@@ -60,12 +60,34 @@ export class Engine {
 
       if (!orderBook) console.log("Order book not found for market:", market)
       
-      this.checkAndLock()
+      this.checkAndLock(quantity,price,side,base_assert,quote_assert,userId)
+      let order:order ={
+         quortAssert:quote_assert,
+         price,
+         quantity,
+         side,
+         userId,
+         filled:0,
+         orderId:Math.random().toString(36).substring(2, 15)+ Math.random().toString(36).substring(2, 15)
+      }
+      let {fills,executedQuantity}=orderBook!.addOrder(order)
    }
 
-   checkAndLock(){
-
+   checkAndLock(quantity:number,price:number,side:"BUY" | "SELL",base_assert:string,quote_assert:string,userId:string) {
+      if (side==="BUY"){
+         if((this.balances.get(userId)?.[quote_assert]?.available || 0)<= Number(price*quantity)){ 
+            throw new Error("Insufficient balance")
+      }
+         this.balances.get(userId)![quote_assert].available -= price*quantity
+         this.balances.get(userId)![quote_assert].locked += price*quantity
+   }else{
+      if((this.balances.get(userId)?.[base_assert]?.available || 0)<= quantity){
+         throw new Error("Insufficient balance")
+      }
+      this.balances.get(userId)![base_assert].available -= quantity
+      this.balances.get(userId)![base_assert].locked += quantity
    }
+}
    setBaseBalances() {
         this.balances.set("1", {
             [BASE_CURRENCY]: {
