@@ -144,4 +144,39 @@ export class orderBook{
          exicutedQuantity:exicutedQty
       }
    }
+   getDepth(){
+      let bids:[string,string][]=this.bits.slice(0,10).map((bid)=> [bid.price.toString(),(bid.quantity - bid.filled).toString()])
+      let asks:[string,string][]=this.asks.slice(0,10).map((ask)=> [ask.price.toString(),(ask.quantity - ask.filled).toString()])
+      
+      let bidsObj:{[key:string]:number}={}
+      let asksObj:{[key:string]:number}={}
+      for(let i=0;i<this.bits.length;i++){
+         let curr=this.bits[i]
+         if(!bidsObj[curr.price]){
+            bidsObj[curr.price]=0 
+         }
+         bidsObj[curr.price]+=curr.quantity
+      }
+
+      for(let i=0;i<this.asks.length;i++){
+         let curr=this.asks[i]
+         if(!asksObj[curr.price]){
+            asksObj[curr.price]=0 
+         }
+         asksObj[curr.price]+=curr.quantity
+      }
+
+      for(let bid in bidsObj){
+         bids.push([bid,bidsObj[bid].toString()])
+      }
+      for(let ask in asksObj){
+         asks.push([ask,asksObj[ask].toString()])
+      }
+
+      return {
+         bids,
+         asks
+      }
+   }
+
 }
