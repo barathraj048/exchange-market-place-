@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { CreateOrder, MessageFromApi } from '../types/api-types';
+import { CancelOrder, CreateOrder, MessageFromApi } from '../types/api-types';
 export const BASE_CURRENCY="INR";
 import { orderBook,order, fills } from './orderBook';
 import { redisManager } from '../RedisManager';
@@ -50,10 +50,83 @@ export class Engine {
    }
    process({message,userId}:{message:MessageFromApi,userId:string}) {
       switch(message.type){
-         case CreateOrder:{
+         case CreateOrder:
+            let orderId_send:string
+            try{
             let {exicutedQty,fills,orderId}=this.createOrder(message.data.quantity,message.data.price,message.data.side,message.data.market,userId)
+            orderId_send=orderId
+            redisManager.getInstance().publishToApi(userId,{
+               type:"ORDER_PLACED",
+               payload:{
+                  orderId,
+                  exicutedQty,
+                  fills
+               }
+            })
+         }catch(e){
+            console.log(`Error processing order for user ${userId}:`, e)
+            redisManager.getInstance().publishToApi(userId,{
+               type:"ORDER_CANCELED",
+               payload:{
+                  orderId:"",
+                  executedQuantity:0,
+                  remainingQuantity:0
+               }
+            })
          }
+         break;
+         case CancelOrder:
+            try{
+               let orderId=message.data.orderId
+               let base_assert=message.data.market.split("_")[0]
+               let quote_assert=message.data.market.split("_")[1]
+               let cancelOrderBook=this.orderBook.find((o)=> o.base_asset===base_assert)
+
+               if(!cancelOrderBook) throw new Error("Order book not found")
+               let order=cancelOrderBook.asks.find((o)=> o.orderId===orderId) || cancelOrderBook.bits.find((o)=> o.orderId===orderId)
+               if(!order) throw new Error("Order not found")
+               if(order.side==="BUY"){
+                  let balance=(order.quantity-order.filled)*order.price
+                  this.balances.get(userId)![quote_assert].locked -= balance
+                  this.balances.get(userId)![quote_assert].available += balance
+                  this.updateDepth(message.data.market,orderId,balance)
+               }else{
+                  let balance=(order.quantity-order.filled)*order.price
+                  this.balances.get(userId)![base_assert].locked -=balance
+                  this.balances.get(userId)![base_assert].available += balance
+                  this.updateDepth(message.data.market,orderId,balance)
+               }
+               redisManager.getInstance().publishToApi(userId, {
+                        type: "ORDER_CANCELLED",
+                        payload: {
+                            orderId,
+                            executedQty: 0,
+                            remainingQty: 0
+                        }
+                    });
+            }
+            catch(e){
+               console.log(`Error cancelling order for user ${userId}:`, e)
+                
+            }break
+
       }
+   }
+
+   updateDepth(maker:string,orderId:string,price:number){
+      let orderBook=this.orderBook.find((o)=> o.base_asset===maker)
+      if(!orderBook) return
+      let depth=orderBook.getDepth()
+      let updatedBids=depth.bids.filter((b)=> b[0]==price.toString())
+      let updatedAsks=depth.asks.filter((a)=> a[0]==price.toString())
+
+      redisManager.getInstance().publishTrade(`depth@${maker}`, {
+         stream: `depth@${maker}`,
+         data: {
+            e: "depth",
+            a: updatedAsks.length ? updatedAsks : [[price.toString(),"0"]],
+            b: updatedBids.length ? updatedBids : [[price.toString(),'0']],
+         }})
    }
    createOrder(quantity:number,price:number,side:"BUY" | "SELL",market:string,userId:string) {
       let base_assert=market.split("_")[0]
