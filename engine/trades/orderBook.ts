@@ -14,7 +14,7 @@ export interface fills{
    quantity:number,
    tradeId:string,
    otherUserId:string,
-   marketOrderId:string
+   markerOrderId:string
 }
 
 export class orderBook{
@@ -98,7 +98,7 @@ export class orderBook{
                quantity:tradeQty,
                tradeId:(this.lastTradeId++).toString(),
                otherUserId:this.asks[i].userId,
-               marketOrderId:this.asks[i].orderId
+               markerOrderId:this.asks[i].orderId
             })
             if(this.asks[i].filled - this.asks[i].quantity ==0){
                this.asks.splice(i,1)
@@ -130,7 +130,7 @@ export class orderBook{
                quantity:tradeQty,
                tradeId:(this.lastTradeId+1).toString(),
                otherUserId:this.bits[i].userId,
-               marketOrderId:this.bits[i].orderId
+               markerOrderId:this.bits[i].orderId
             })
 
             if(this.bits[i].filled - this.bits[i].quantity ==0){
@@ -178,5 +178,9 @@ export class orderBook{
          asks
       }
    }
-
+   getOpenOrders(userId:string):order[]{
+      let bids=this.bits.filter((bit)=> bit.userId===userId)
+      let asks=this.asks.filter((ask)=> ask.userId===userId)
+      return [...bids,...asks]   
+   }
 }

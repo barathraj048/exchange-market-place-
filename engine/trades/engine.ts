@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { CancelOrder, CreateOrder, MessageFromApi } from '../types/api-types';
+import { CancelOrder, CreateOrder, getDepth, getOpenOrders, MessageFromApi, onRamp } from '../types/api-types';
 export const BASE_CURRENCY="INR";
 import { orderBook,order, fills } from './orderBook';
 import { redisManager } from '../RedisManager';
@@ -48,14 +48,14 @@ export class Engine {
          balance:Array.from(this.balances.entries())
       }
    }
-   process({message,userId}:{message:MessageFromApi,userId:string}) {
+   process({message,ClientId}:{message:MessageFromApi,ClientId:string}) {
       switch(message.type){
          case CreateOrder:
             let orderId_send:string
             try{
-            let {exicutedQty,fills,orderId}=this.createOrder(message.data.quantity,message.data.price,message.data.side,message.data.market,userId)
+            let {exicutedQty,fills,orderId}=this.createOrder(message.data.quantity,message.data.price,message.data.side,message.data.market,ClientId)
             orderId_send=orderId
-            redisManager.getInstance().publishToApi(userId,{
+            redisManager.getInstance().publishToApi(ClientId,{
                type:"ORDER_PLACED",
                payload:{
                   orderId,
@@ -64,8 +64,8 @@ export class Engine {
                }
             })
          }catch(e){
-            console.log(`Error processing order for user ${userId}:`, e)
-            redisManager.getInstance().publishToApi(userId,{
+            console.log(`Error processing order for user ${ClientId}:`, e)
+            redisManager.getInstance().publishToApi(ClientId,{
                type:"ORDER_CANCELED",
                payload:{
                   orderId:"",
@@ -87,16 +87,16 @@ export class Engine {
                if(!order) throw new Error("Order not found")
                if(order.side==="BUY"){
                   let balance=(order.quantity-order.filled)*order.price
-                  this.balances.get(userId)![quote_assert].locked -= balance
-                  this.balances.get(userId)![quote_assert].available += balance
+                  this.balances.get(ClientId)![quote_assert].locked -= balance
+                  this.balances.get(ClientId)![quote_assert].available += balance
                   this.updateDepth(message.data.market,orderId,balance)
                }else{
                   let balance=(order.quantity-order.filled)*order.price
-                  this.balances.get(userId)![base_assert].locked -=balance
-                  this.balances.get(userId)![base_assert].available += balance
+                  this.balances.get(ClientId)![base_assert].locked -=balance
+                  this.balances.get(ClientId)![base_assert].available += balance
                   this.updateDepth(message.data.market,orderId,balance)
                }
-               redisManager.getInstance().publishToApi(userId, {
+               redisManager.getInstance().publishToApi(ClientId, {
                         type: "ORDER_CANCELLED",
                         payload: {
                             orderId,
@@ -106,13 +106,58 @@ export class Engine {
                     });
             }
             catch(e){
-               console.log(`Error cancelling order for user ${userId}:`, e)
+               console.log(`Error cancelling order for user ${ClientId}:`, e)
                 
             }break
+         case getOpenOrders:
+            try{
+               let orderBook=this.orderBook.find((o)=> o.base_asset===message.data.market.split("_")[0] && o.quote_asset===message.data.market.split("_")[1])
+               let openOrders:order[]=orderBook?.getOpenOrders(ClientId) || []
+               redisManager.getInstance().publishToApi(ClientId,{
+                  type:"OPEN_ORDERS",
+                  payload:openOrders
+               })
+            }
+            catch(e){
+               console.log(`Error fetching open orders for user ${ClientId}:`, e)
+            }
+            break;
+         case onRamp:
+            let amount=message.data.amount
+            this.onRamp(ClientId,amount)
+            break;
 
+         case getDepth:
+            try{let orderBook=this.orderBook.find((o)=> o.base_asset == message.data.market.split("_")[0] && o.quote_asset==message.data.market.split("_")[1])
+            let payload=orderBook?.getDepth()
+            redisManager.getInstance().publishToApi(ClientId,{
+               type:"GET_DEPTH",
+               payload
+            })}
+            catch(e){
+               console.log(`error occure whaile fetching depth ${e}`)
+               redisManager.getInstance().publishToApi(ClientId,{
+                  type:"GET_DEPTH",
+                  payload:{
+                     bits:[],
+                     asks:[]
+                  }
+               })}
+            break
       }
    }
 
+   onRamp(ClientId:string,amount:number) {
+      let balance =this.balances.get(ClientId)
+      if(!balance) {
+         this.balances.set(ClientId,{
+            [BASE_CURRENCY]:{
+               available:amount,
+               locked:0
+            }
+         })
+      }
+   }
    updateDepth(maker:string,orderId:string,price:number){
       let orderBook=this.orderBook.find((o)=> o.base_asset===maker)
       if(!orderBook) return
@@ -128,25 +173,25 @@ export class Engine {
             b: updatedBids.length ? updatedBids : [[price.toString(),'0']],
          }})
    }
-   createOrder(quantity:number,price:number,side:"BUY" | "SELL",market:string,userId:string) {
+   createOrder(quantity:number,price:number,side:"BUY" | "SELL",market:string,ClientId:string) {
       let base_assert=market.split("_")[0]
       let quote_assert=market.split("_")[1]
       let orderBook=this.orderBook.find((o)=> o.base_asset===base_assert && o.quote_asset===quote_assert)
 
       if (!orderBook) console.log("Order book not found for market:", market)
       
-      this.checkAndLock(quantity,price,side,base_assert,quote_assert,userId)
+      this.checkAndLock(quantity,price,side,base_assert,quote_assert,ClientId)
       let order:order ={
          quortAssert:quote_assert,
          price,
          quantity,
          side,
-         userId,
+         userId:ClientId,
          filled:0,
          orderId:Math.random().toString(36).substring(2, 15)+ Math.random().toString(36).substring(2, 15)
       }
       let {fills,executedQuantity}=orderBook!.addOrder(order)
-      this.updateBalances(userId,executedQuantity,fills,base_assert,quote_assert,side)
+      this.updateBalances(ClientId,executedQuantity,fills,base_assert,quote_assert,side)
       this.createDbTrade(fills,market,side)
       this.createDbOrder(order,fills,executedQuantity,market)
       this.publishWsTrades(fills,market,side)
@@ -223,7 +268,7 @@ export class Engine {
          redisManager.getInstance().pushTODb({
             type: ORDER_UPDATE,
             data:{
-               orderId:fill.otherUserId,
+               orderId:fill.markerOrderId,
                executedQuantity:fill.quantity,
             }
       })})
@@ -246,8 +291,8 @@ export class Engine {
       })
    }
 
-   updateBalances(userId:string,executedQuantity:number,fills:fills[],base_assert:string,quote_assert:string,side:"BUY" | "SELL") {
-      const userBalance=this.balances.get(userId)
+   updateBalances(ClientId:string,executedQuantity:number,fills:fills[],base_assert:string,quote_assert:string,side:"BUY" | "SELL") {
+      const userBalance=this.balances.get(ClientId)
       if(!userBalance) return
       if(side==="BUY"){
          fills.forEach((fill)=> {
@@ -266,19 +311,19 @@ export class Engine {
          })
       }
    }
-   checkAndLock(quantity:number,price:number,side:"BUY" | "SELL",base_assert:string,quote_assert:string,userId:string) {
+   checkAndLock(quantity:number,price:number,side:"BUY" | "SELL",base_assert:string,quote_assert:string,ClientId:string) {
       if (side==="BUY"){
-         if((this.balances.get(userId)?.[quote_assert]?.available || 0)<= Number(price*quantity)){ 
+         if((this.balances.get(ClientId)?.[quote_assert]?.available || 0)<= Number(price*quantity)){ 
             throw new Error("Insufficient balance")
       }
-         this.balances.get(userId)![quote_assert].available -= price*quantity
-         this.balances.get(userId)![quote_assert].locked += price*quantity
+         this.balances.get(ClientId)![quote_assert].available -= price*quantity
+         this.balances.get(ClientId)![quote_assert].locked += price*quantity
    }else{
-      if((this.balances.get(userId)?.[base_assert]?.available || 0)<= quantity){
+      if((this.balances.get(ClientId)?.[base_assert]?.available || 0)<= quantity){
          throw new Error("Insufficient balance")
       }
-      this.balances.get(userId)![base_assert].available -= quantity
-      this.balances.get(userId)![base_assert].locked += quantity
+      this.balances.get(ClientId)![base_assert].available -= quantity
+      this.balances.get(ClientId)![base_assert].locked += quantity
    }
 }
    setBaseBalances() {
