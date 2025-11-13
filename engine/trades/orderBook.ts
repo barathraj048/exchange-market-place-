@@ -84,6 +84,7 @@ export class orderBook{
    }{
       let fills:fills[]=[]
       let exicutedQuantity=0
+      this.asks.sort((a,b)=> a.price - b.price)
       for(let i=0;i<this.asks.length;i++){
          let remainingQuantity=order.quantity-order.filled
          let remainingAsksQuantity=this.asks[i].quantity - this.asks[i].filled
@@ -116,7 +117,8 @@ export class orderBook{
       exicutedQuantity:number
    }{
       let fills:fills[]=[]
-      let exicutedQty=0
+      let exicutedQty=0 
+      this.bits.sort((a,b)=> b.price - a.price)
       for(let i=0;i <this.bits.length;i++){
          let remainingOrderQuantity=order.quantity-order.filled
          let remainingBidsQuantity=this.bits[i].quantity - this.bits[i].filled
