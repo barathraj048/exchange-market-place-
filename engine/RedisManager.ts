@@ -1,7 +1,7 @@
    import { createClient, RedisClientType } from "redis"
    import {ADD_TRADE, ORDER_UPDATE} from "./types/index"
 import { wsMessage } from "./types/wstypes";
-import { messageToApi } from "./types/toAPi";
+import { MessageToApi } from "./types/toAPi";
 
 type DbMessage =
   {
@@ -52,7 +52,7 @@ type DbMessage =
          this.client.publish(channel,JSON.stringify(data))
       }
 
-      public publishToApi(ClientId:string,data:messageToApi){
+      public publishToApi(ClientId:string,data:MessageToApi){
          this.client.publish(ClientId,JSON.stringify(data))
       }
    } 

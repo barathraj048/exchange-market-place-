@@ -4,9 +4,13 @@ import { RedisManager } from "../RedisManager";
 
 export let klineData = Router();
 
-let pgClient=new Client({
-
-})
+    const pgClient = new Client({
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 'password@123',
+    database: 'exchange',
+    });
 
 klineData.get("/", async (req, res) => {
     let {duration,market,intravel,startTime,endTime}=req.query
