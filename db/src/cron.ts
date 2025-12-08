@@ -1,6 +1,6 @@
 import { Client } from 'pg';
 
-const client = new Client({
+let client = new Client({
     user: 'postgres',              
     host: 'localhost',
     database: 'exchange_db',       
@@ -31,3 +31,7 @@ async function start() {
 }
 
 start().catch(console.error);
+
+
+
+
