@@ -1,5 +1,5 @@
 import {WebSocketServer } from 'ws';
-import { UserManager } from './userManager.js';
+import { UserManager } from './UserManager.js';
 
 let wss =new WebSocketServer()
 
