@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { GET_DEPTH } from "../types";
-import { RedisManager } from "../RedisManager";
+import { GET_DEPTH } from "../types/index.js";
+import { RedisManager } from "../RedisManager.js";
 
 export let depthRouter = Router();
 

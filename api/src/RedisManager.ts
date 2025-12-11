@@ -1,6 +1,6 @@
-import {createClient, RedisClientType} from 'redis'
-import { MessageToEngine } from './types/to'
-import { MessageFromOrderbook } from './types'
+import { createClient, type RedisClientType } from 'redis';
+import { type MessageToEngine } from './types/to.js';
+import { type MessageFromOrderbook } from './types/index.js';
 
 export class RedisManager{
    private client:RedisClientType

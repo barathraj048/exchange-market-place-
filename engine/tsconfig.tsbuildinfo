@@ -1,0 +1,1 @@
+{"root":["./src/redismanager.ts","./src/index.ts","./src/trades/engine.ts","./src/trades/orderbook.ts","./src/types/api-types.ts","./src/types/index.ts","./src/types/toapi.ts","./src/types/wstypes.ts"],"version":"5.9.3"}

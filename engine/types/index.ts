@@ -1,2 +1,0 @@
-export const ADD_TRADE="ADD_TRADE"
-export const ORDER_UPDATE="ORDER_UPDATE"

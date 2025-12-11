@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {Client} from "pg";
-import { RedisManager } from "../RedisManager";
 
 export let klineData = Router();
 
