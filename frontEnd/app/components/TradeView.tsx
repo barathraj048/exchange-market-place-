@@ -22,7 +22,7 @@ export function TradeView({ market }: { market: string }) {
         const startTime = endTime - 24 * 60 * 60 ;
 
         console.log(`Loading klines from ${new Date(startTime)} to ${new Date(endTime)}`);
-
+      
         const response = await fetch(
           `/api/proxy?symbol=${market}&interval=${interval}&startTime=${startTime}&endTime=${endTime}`
         );

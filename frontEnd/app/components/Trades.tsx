@@ -7,8 +7,47 @@ export function Trades({market}:{market:string}) {
    const [quantities, setQuantities] = useState<string[]>([])
    const [times, setTimes] = useState<string[]>([])
    const [isBuyerMaker, setIsBuyerMaker] = useState<boolean[]>([])
+   const [isLoading, setIsLoading] = useState(true)
 
+   // Load historical trades on mount
    useEffect(() => {
+      const loadHistoricalTrades = async () => {
+         try {
+            setIsLoading(true)
+            
+            // Fetch last 20 trades from Backpack API
+            const response = await fetch(
+               `https://api.backpack.exchange/api/v1/trades?symbol=${market}&limit=20`
+            )
+            
+            if (response.ok) {
+               const trades = await response.json()
+               
+               // Backpack returns trades in chronological order, reverse to show newest first
+               const reversedTrades = [...trades].reverse()
+               
+               setPrices(reversedTrades.map((t: any) => t.price))
+               setQuantities(reversedTrades.map((t: any) => t.quantity))
+               setTimes(reversedTrades.map((t: any) => 
+                  new Date(parseInt(t.timestamp)).toLocaleTimeString()
+               ))
+               // Backpack uses 'm' for maker (sell) and 't' for taker (buy)
+               setIsBuyerMaker(reversedTrades.map((t: any) => t.side === 'Bid'))
+            }
+         } catch (err) {
+            console.error("Error loading historical trades:", err)
+         } finally {
+            setIsLoading(false)
+         }
+      }
+      
+      loadHistoricalTrades()
+   }, [market])
+
+   // Subscribe to real-time trades
+   useEffect(() => {
+      if (isLoading) return // Wait for historical data to load first
+      
       const type = "trade"
       const id = `trade-${market}`
       
@@ -35,7 +74,7 @@ export function Trades({market}:{market:string}) {
          })
          SignalingManager.getInstance().deRegisterCallback(type, id);
       }
-   }, [market])
+   }, [market, isLoading])
 
    return (
       <div className='w-full'>
@@ -48,19 +87,24 @@ export function Trades({market}:{market:string}) {
          
          {/* Data Rows */}
          <div className='text-sm'>
-            {prices.length === 0 ? (
+            {isLoading ? (
+               <div className='text-slate-500 text-center py-4 animate-pulse'>
+                  Loading trades...
+               </div>
+            ) : prices.length === 0 ? (
                <div className='text-slate-500 text-center py-4'>No trades yet...</div>
             ) : (
                prices.map((price, index) => (
                   <div 
-                     key={index} 
-                     className={`flex justify-between py-1 hover:bg-slate-800/50 transition-colors 
-                        ${isBuyerMaker[index] ? 'bg-green-500/20' : 'bg-red-500/20'}`}
-                     >
-                     <div className="flex-1 text-left">{price}</div>
+                     key={`${price}-${times[index]}-${index}`} 
+                     className={`flex justify-between py-1 hover:bg-slate-800/50 transition-colors`}
+                  >
+                     <div className={`flex-1 text-left ${isBuyerMaker[index] ? 'text-green-400' : 'text-red-400'}`}>
+                        {price}
+                     </div>
                      <div className="flex-1 text-right text-gray-50">{quantities[index]}</div>
                      <div className="flex-1 text-right text-slate-400">{times[index]}</div>
-                     </div>
+                  </div>
                ))
             )}
          </div>

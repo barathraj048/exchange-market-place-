@@ -7,7 +7,10 @@ export async function GET(req: Request) {
   const startTime = searchParams.get("startTime");
   const endTime = searchParams.get("endTime");
 
+  // Backpack API expects timestamps in milliseconds
   const targetUrl = `https://api.backpack.exchange/api/v1/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}`;
+
+  console.log("Proxying request to:", targetUrl);
 
   try {
     const res = await fetch(targetUrl, {
@@ -17,7 +20,12 @@ export async function GET(req: Request) {
       },
     });
 
+    if (!res.ok) {
+      console.error("Backpack API error:", res.status, res.statusText);
+    }
+
     const data = await res.json();
+    console.log(`Fetched ${data.length} klines from Backpack`);
 
     return NextResponse.json(data, {
       status: res.status,

@@ -1,7 +1,6 @@
-import { Ticker ,Depth, Trade ,KLine} from "./types";
+import { Ticker, Depth, Trade, KLine } from "./types";
 
-
-export const BASE_URL = "wss://ws.backpack.exchange/"
+export const BASE_URL = "wss://ws.backpack.exchange/";
 
 export class SignalingManager {
     private ws: WebSocket;
@@ -19,7 +18,7 @@ export class SignalingManager {
     }
 
     public static getInstance() {
-        if (!this.instance)  {
+        if (!this.instance) {
             this.instance = new SignalingManager();
         }
         return this.instance;
@@ -28,14 +27,30 @@ export class SignalingManager {
     init() {
         this.ws.onopen = () => {
             this.initialized = true;
-            this.bufferedMessages.forEach(message => {
+            this.bufferedMessages.forEach((message) => {
                 this.ws.send(JSON.stringify(message));
             });
             this.bufferedMessages = [];
-        }
+        };
+        
         this.ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
+            
+            
+            // Handle subscription confirmation messages
+            if (message.id && message.result) {
+                console.log("Subscription confirmed:", message);
+                return;
+            }
+            
+            // Check if message has the expected structure
+            if (!message.data || !message.data.e) {
+                console.log("Message missing data.e field:", message);
+                return;
+            }
+            
             const type = message.data.e;
+            
             if (this.callbacks[type]) {
                 this.callbacks[type].forEach(({ callback }: any) => {
                     if (type === "ticker") {
@@ -46,51 +61,62 @@ export class SignalingManager {
                             volume: message.data.v,
                             quoteVolume: message.data.V,
                             symbol: message.data.s,
-                        }
-
+                        };
                         callback(newTicker);
-                   }
-                   if (type === "depth") {
-                    const depthData:Partial<Depth> = {
-                        bids: message.data.b,
-                        asks: message.data.a,}
-                    callback(depthData);
-                   }
-                   if (type === "trade") {
-                    console.log("Trade message received:", message);
-                    const tradeData :Partial<Trade> = {
-                        price: message.data.p,
-                        quantity: message.data.q,
-                        isBuyerMaker: message.data.m,
-                        timestamp: message.data.t,
                     }
-                    callback(tradeData);
-                   }
-                   if(type === "kline") {
-                    const kline = message.data;
-                    const klineData :Partial<KLine> = {
-                        open: kline.o,
-                        high: kline.h,
-                        low: kline.l,
-                        close: kline.c,
-                        volume: kline.v,
-                        quoteVolume: kline.V,    
-                        trades: kline.n,            
-                        start: kline.s,
-                        end: kline.t
+                    
+                    if (type === "depth") {
+                        const depthData: Partial<Depth> = {
+                            bids: message.data.b,
+                            asks: message.data.a,
+                        };
+                        callback(depthData);
                     }
-                    callback(klineData);
-                   }
+                    
+                    if (type === "trade") {
+                        console.log("Trade data parsed:", message.data);
+                        const tradeData: Partial<Trade> = {
+                            price: message.data.p,
+                            quantity: message.data.q,
+                            isBuyerMaker: message.data.m,
+                            timestamp: message.data.t,
+                        };
+                        callback(tradeData);
+                    }
+                    
+                    if (type === "kline") {
+                        const kline = message.data;
+                        const klineData: Partial<KLine> = {
+                            open: kline.o,
+                            high: kline.h,
+                            low: kline.l,
+                            close: kline.c,
+                            volume: kline.v,
+                            quoteVolume: kline.V,
+                            trades: kline.n,
+                            start: kline.s,
+                            end: kline.t,
+                        };
+                        callback(klineData);
+                    }
                 });
             }
-        }
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+        
+        this.ws.onclose = () => {
+            console.log("WebSocket closed");
+        };
     }
 
     sendMessage(message: any) {
         const messageToSend = {
             ...message,
-            id: this.id++
-        }
+            id: this.id++,
+        };
         if (!this.initialized) {
             this.bufferedMessages.push(messageToSend);
             return;
@@ -105,7 +131,9 @@ export class SignalingManager {
 
     async deRegisterCallback(type: string, id: string) {
         if (this.callbacks[type]) {
-            const index = this.callbacks[type].findIndex((callback:any) => callback.id === id);
+            const index = this.callbacks[type].findIndex(
+                (callback: any) => callback.id === id
+            );
             if (index !== -1) {
                 this.callbacks[type].splice(index, 1);
             }
