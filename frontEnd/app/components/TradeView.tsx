@@ -10,33 +10,33 @@ export function TradeView({ market }: { market: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load last 7 days of historical klines
+  // Use a consistent interval for both historical and live data!
+  const CHART_INTERVAL = "1m"; 
+
+  // Load historical klines
   useEffect(() => {
     const loadHistoricalData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const interval = "5m";
+        // Backpack API expects seconds for startTime/endTime
         const endTime = Math.floor(Date.now() / 1000);  
-        const startTime = endTime - 24 * 60 * 60 ;
+        const startTime = endTime - 24 * 60 * 60;
 
-        console.log(`Loading klines from ${new Date(startTime)} to ${new Date(endTime)}`);
+        console.log(`Loading klines from ${new Date(startTime * 1000)} to ${new Date(endTime * 1000)}`);
       
         const response = await fetch(
-          `/api/proxy?symbol=${market}&interval=${interval}&startTime=${startTime}&endTime=${endTime}`
+          `/api/proxy?symbol=${market}&interval=${CHART_INTERVAL}&startTime=${startTime}&endTime=${endTime}`
         );
 
-        console.log("Klines API response status:", response.status);
         if (!response.ok) {
           throw new Error(`Failed to fetch klines: ${response.statusText}`);
         }
 
         const klines = await response.json();
 
-        console.log(`Loaded ${klines.length} historical klines`);
-
-        // Transform API response to KLine format
+        // FIX: Removed parseInt() from start and end. Keep them as the raw ISO strings Backpack provides.
         const formattedKlines: KLine[] = klines.map((k: any) => ({
           open: k.open,
           high: k.high,
@@ -45,8 +45,8 @@ export function TradeView({ market }: { market: string }) {
           volume: k.volume,
           quoteVolume: k.quoteVolume,
           trades: parseInt(k.trades) || 0,
-          start: parseInt(k.start),
-          end: parseInt(k.end),
+          start: k.start, 
+          end: k.end,
         }));
 
         setKlineData(formattedKlines);
@@ -65,14 +65,7 @@ export function TradeView({ market }: { market: string }) {
   useEffect(() => {
     if (!chartRef.current || klineData.length === 0 || isLoading) return;
 
-    // Destroy existing chart
-    if (chartManagerRef.current) {
-      chartManagerRef.current.destroy();
-    }
-
-    console.log(`Initializing chart with ${klineData} candles`);
-
-    // Create chart with historical data
+    // FIX: Parse the ISO string directly into a Date object. (Using 'start' is standard for candles)
     const chartManager = new ChartManager(
       chartRef.current,
       klineData
@@ -81,7 +74,7 @@ export function TradeView({ market }: { market: string }) {
           high: parseFloat(x.high),
           low: parseFloat(x.low),
           open: parseFloat(x.open),
-          timestamp: new Date(parseInt(x.end.toString())), 
+          timestamp: new Date(x.start), 
         }))
         .sort((x, y) => (x.timestamp < y.timestamp ? -1 : 1)),
       {
@@ -98,49 +91,40 @@ export function TradeView({ market }: { market: string }) {
         chartManagerRef.current = null;
       }
     };
-  }, [klineData, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, market]); 
+
+  // Handle Real-time updates
   useEffect(() => {
     if (isLoading || klineData.length === 0) return; 
 
     const type = "kline";
     const id = `kline-${market}`;
-    const interval = "1m";
 
     const callback = (data: KLine) => {
-      console.log("Real-time kline update:", data);
-
       setKlineData((prevKlines) => {
         const existingIndex = prevKlines.findIndex(
-          (k) => k.end.toString() === data.end.toString()
+          (k) => k.start === data.start // Better to match by 'start' time
         );
 
         if (existingIndex !== -1) {
-          // Update existing candle (current candle still forming)
           const updated = [...prevKlines];
           updated[existingIndex] = data;
           return updated;
         } else {
-          // New candle - add to end
           const updated = [...prevKlines, data];
-
-          // Keep last 7 days worth of data (10,080 candles for 1m interval)
-          const maxCandles = 7 * 24 * 60;
-          if (updated.length > maxCandles) {
-            return updated.slice(-maxCandles);
-          }
-
-          return updated;
+          const maxCandles = 7 * 24 * 60; // Adjust max candles based on your chosen interval
+          return updated.length > maxCandles ? updated.slice(-maxCandles) : updated;
         }
       });
 
-      // Update chart in real-time
       if (chartManagerRef.current) {
         chartManagerRef.current.update({
           close: parseFloat(data.close),
           high: parseFloat(data.high),
           low: parseFloat(data.low),
           open: parseFloat(data.open),
-          timestamp: new Date(parseInt(data.end.toString())),
+          timestamp: new Date(data.start), // FIX: Parse ISO string directly
         });
       }
     };
@@ -148,26 +132,23 @@ export function TradeView({ market }: { market: string }) {
     SignalingManager.getInstance().registerCallback(type, callback, id);
     SignalingManager.getInstance().sendMessage({
       method: "SUBSCRIBE",
-      params: [`kline.${interval}.${market}`],
+      params: [`kline.${CHART_INTERVAL}.${market}`],
     });
 
     return () => {
       SignalingManager.getInstance().sendMessage({
         method: "UNSUBSCRIBE",
-        params: [`kline.${interval}.${market}`],
+        params: [`kline.${CHART_INTERVAL}.${market}`],
       });
       SignalingManager.getInstance().deRegisterCallback(type, id);
     };
-  }, [market, isLoading, klineData.length]);
+  }, [market, isLoading]);
 
   if (isLoading) {
     return (
-      <div
-        style={{ height: "520px", width: "100%", marginTop: 4 }}
-        className="flex items-center justify-center bg-[#0e0f14]"
-      >
+      <div style={{ height: "520px", width: "100%", marginTop: 4 }} className="flex items-center justify-center bg-[#0e0f14]">
         <div className="text-gray-400">
-          <div className="animate-pulse">Loading 7 days of chart data...</div>
+          <div className="animate-pulse">Loading chart data...</div>
         </div>
       </div>
     );
@@ -175,10 +156,7 @@ export function TradeView({ market }: { market: string }) {
 
   if (error) {
     return (
-      <div
-        style={{ height: "520px", width: "100%", marginTop: 4 }}
-        className="flex items-center justify-center bg-[#0e0f14]"
-      >
+      <div style={{ height: "520px", width: "100%", marginTop: 4 }} className="flex items-center justify-center bg-[#0e0f14]">
         <div className="text-red-400">
           <div>Error loading chart data</div>
           <div className="text-sm text-gray-500 mt-2">{error}</div>

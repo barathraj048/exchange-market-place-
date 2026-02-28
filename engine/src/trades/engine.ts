@@ -441,4 +441,8 @@ export class Engine {
       });
     });
   }
+
+  getBalances(ClientId: string) {
+    return this.balances.get(ClientId) || {};
+  }
 }
