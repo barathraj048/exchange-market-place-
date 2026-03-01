@@ -1,10 +1,9 @@
-"use strict";
-const { Client } = require('pg');
+import { Client } from 'pg';
 const client = new Client({
-    user: 'your_user',
+    user: 'postgres',
     host: 'localhost',
-    database: 'my_database',
-    password: 'your_password',
+    database: 'exchange',
+    password: 'postgres ',
     port: 5432,
 });
 async function initializeDB() {

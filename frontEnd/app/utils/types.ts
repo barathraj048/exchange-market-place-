@@ -41,3 +41,14 @@ export interface Ticker {
     "trades": string,
     "volume": string
 }
+
+export interface AssetBalance {
+    "available": string,
+    "locked": string,
+    "assert": string
+}
+
+export interface BalanceSheet {
+  userId: string;
+  balances: AssetBalance[];
+}
