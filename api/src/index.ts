@@ -5,6 +5,7 @@ import { depthRouter } from './routes/depthRoute.js';
 import { tradeRoute } from './routes/tradeRoute.js';
 import { tickerRoute } from './routes/tickerRoute.js';
 import { klineData } from './routes/klineData.js';
+import { onRampRouter } from './routes/onRamp.js';
 
 const app = express();
 let port=3001;
@@ -17,6 +18,7 @@ app.use("/api/v1/depth",depthRouter)
 app.use("/api/v1/trade",tradeRoute)
 app.use("/api/v1/ticker",tickerRoute)
 app.use("/api/v1/kline",klineData)
+app.use("/api/v1/onramp",onRampRouter)
 
 app.listen(port,()=>{
       console.log(`Server is running on port ${port}`);
