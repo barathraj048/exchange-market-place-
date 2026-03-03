@@ -75,7 +75,27 @@ export function SwapUI({ market }: {market: string}) {
                                     Max
                                 </div>
                             </div>
-                    <button type="button" className="font-semibold  focus:ring-blue-200 focus:none focus:outline-none text-center h-12 rounded-xl text-base px-4 py-2 my-4 bg-greenPrimaryButtonBackground text-greenPrimaryButtonText active:scale-98" data-rac="">Buy</button>
+{                    
+                    activeTab === "buy" ?<button type="button" className="font-semibold  focus:ring-blue-200 focus:none focus:outline-none text-center h-12 rounded-xl text-base px-4 py-2 my-4 bg-greenPrimaryButtonBackground text-greenPrimaryButtonText active:scale-98" data-rac="">Buy</button>:
+                    <button
+                        type="button"
+                        className="
+                            font-semibold
+                            h-12
+                            rounded-xl
+                            text-base
+                            px-4
+                            py-2
+                            my-4
+                            bg-redBackgroundTransparent
+                            text-redPrimaryButtonText
+                            hover:bg-redBackground
+                            active:scale-98
+                            focus:outline-none
+                        "
+                        >
+                        Sell
+                        </button>}
                     <div className="flex justify-between flex-row mt-1">
                         <div className="flex flex-row gap-2">
                             <div className="flex items-center">
@@ -111,7 +131,7 @@ function MarketButton({ type, setType }: { type: string, setType: any }) {
 }
 
 function BuyButton({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: any }) {
-    return <div className={`flex flex-col mb-[-2px] flex-1 cursor-pointer justify-center border-b-2 p-4 ${activeTab === 'buy' ? 'border-b-greenBorder bg-greenBackgroundTransparent' : 'border-b-baseBorderMed hover:border-b-baseBorderFocus'}`} onClick={() => setActiveTab('buy')}>
+    return <div onClickCapture={()=>setActiveTab('buy')} className={`flex flex-col mb-[-2px] flex-1 cursor-pointer justify-center border-b-2 p-4 ${activeTab === 'buy' ? 'border-b-greenBorder bg-greenBackgroundTransparent' : 'border-b-baseBorderMed hover:border-b-baseBorderFocus'}`} onClick={() => setActiveTab('buy')}>
         <p className="text-center text-sm font-semibold text-greenText">
             Buy
         </p>
@@ -119,7 +139,7 @@ function BuyButton({ activeTab, setActiveTab }: { activeTab: string, setActiveTa
 }
 
 function SellButton({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: any }) {
-    return <div className={`flex flex-col mb-[-2px] flex-1 cursor-pointer justify-center border-b-2 p-4 ${activeTab === 'sell' ? 'border-b-redBorder bg-redBackgroundTransparent' : 'border-b-baseBorderMed hover:border-b-baseBorderFocus'}`} onClick={() => setActiveTab('sell')}>
+    return <div onClickCapture={()=>setActiveTab('sell')} className={`flex flex-col mb-[-2px] flex-1 cursor-pointer justify-center border-b-2 p-4 ${activeTab === 'sell' ? 'border-b-redBorder bg-redBackgroundTransparent' : 'border-b-baseBorderMed hover:border-b-baseBorderFocus'}`} onClick={() => setActiveTab('sell')}>
         <p className="text-center text-sm font-semibold text-redText">
             Sell
         </p>

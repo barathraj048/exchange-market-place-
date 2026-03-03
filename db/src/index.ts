@@ -3,10 +3,10 @@ import { createClient } from 'redis';
 import { MessageFromEngine } from './type';
 
 const pgClient = new Client({
-  user: 'exchange_user',
-  host: 'localhost',
-  database: 'exchange',
-  password: 'supersecret123',
+  user: 'your_user',
+  host: '127.0.0.1',
+  database: 'my_database',
+  password: 'your_password',
   port: 5432,
 });
 pgClient.connect();

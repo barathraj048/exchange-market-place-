@@ -3,7 +3,7 @@ const client = new Client({
     user: 'postgres',
     host: 'localhost',
     database: 'exchange',
-    password: 'postgres ',
+    password: 'postgres',
     port: 5432,
 });
 async function initializeDB() {
