@@ -29,7 +29,7 @@ export class RedisManager{
             this.client.unsubscribe(id)
             resolve(JSON.parse(message))
          })
-         this.publisher.rPush("message",JSON.stringify({clientId:id,message}))
+         this.publisher.rPush("message",JSON.stringify({ClientId:id,message}))
       })
    }
 
