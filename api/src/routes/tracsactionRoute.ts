@@ -1,72 +1,19 @@
 import { Router } from "express";
-import { type RedisClientType, createClient } from "redis";
+import { RedisManager } from "../RedisManager.js";
 import { CREATE_ORDER, ON_RAMP, OFF_RAMP, GET_BALANCE } from "../types/index.js";
 
 export const transactionRoute = Router();
 
-// Redis client for publishing to engine
-const redisClient: RedisClientType = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
+async function sendToEngine(message: any, timeoutMs: number = 5000): Promise<any> {
+  const responsePromise = RedisManager.getInstances().sendAndAwait(message as any);
 
-// Redis client for subscribing to responses
-const redisSubscriber: RedisClientType = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
-
-redisClient.connect().catch(console.error);
-redisSubscriber.connect().catch(console.error);
-
-// Store pending requests with timeouts
-const pendingRequests = new Map<
-  string,
-  {
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-    timeout: NodeJS.Timeout;
-  }
->();
-
-// Subscribe to API responses from engine
-redisSubscriber.subscribe("api_response", (message) => {
-  try {
-    const response = JSON.parse(message);
-    const { clientId, data } = response;
-
-    const pending = pendingRequests.get(clientId);
-    if (pending) {
-      clearTimeout(pending.timeout);
-      pending.resolve(data);
-      pendingRequests.delete(clientId);
-    }
-  } catch (error) {
-    console.error("Error processing API response:", error);
-  }
-});
-
-// Helper to send message to engine and wait for response
-async function sendToEngine(
-  userId: string,
-  message: any,
-  timeoutMs: number = 5000
-): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      pendingRequests.delete(userId);
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
       reject(new Error("Request timeout"));
     }, timeoutMs);
-
-    pendingRequests.set(userId, { resolve, reject, timeout });
-
-    // Publish to engine queue
-    redisClient.publish(
-      "engine_queue",
-      JSON.stringify({
-        ClientId: userId,
-        message,
-      })
-    );
   });
+
+  return Promise.race([responsePromise, timeoutPromise]);
 }
 
 // POST /api/v1/transaction - Create order
@@ -74,7 +21,6 @@ transactionRoute.post("/", async (req, res) => {
   try {
     const { userId, market, side, type, price, quantity } = req.body;
 
-    // Validate required fields
     if (!userId || !market || !side || !quantity) {
       return res.status(400).json({
         success: false,
@@ -82,7 +28,6 @@ transactionRoute.post("/", async (req, res) => {
       });
     }
 
-    // Validate side
     if (side !== "buy" && side !== "sell") {
       return res.status(400).json({
         success: false,
@@ -90,7 +35,6 @@ transactionRoute.post("/", async (req, res) => {
       });
     }
 
-    // For limit orders, price is required
     if (type === "limit" && (!price || Number(price) <= 0)) {
       return res.status(400).json({
         success: false,
@@ -98,7 +42,6 @@ transactionRoute.post("/", async (req, res) => {
       });
     }
 
-    // Validate quantity
     if (Number(quantity) <= 0) {
       return res.status(400).json({
         success: false,
@@ -106,14 +49,12 @@ transactionRoute.post("/", async (req, res) => {
       });
     }
 
-    // For market orders, use a high/low price to ensure execution
     let orderPrice = price;
     if (type === "market") {
       orderPrice = side === "buy" ? "999999" : "0.01";
     }
 
-    // Send order to engine
-    const response = await sendToEngine(userId, {
+    const response = await sendToEngine({
       type: CREATE_ORDER,
       data: {
         userId,
@@ -151,7 +92,7 @@ transactionRoute.post("/deposit", async (req, res) => {
 
     const txnId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const response = await sendToEngine(userId, {
+    await sendToEngine({
       type: ON_RAMP,
       data: {
         userId,
@@ -189,8 +130,7 @@ transactionRoute.post("/withdraw", async (req, res) => {
       });
     }
 
-    // First, check if user has sufficient balance
-    const balanceResponse = await sendToEngine(userId, {
+    const balanceResponse = await sendToEngine({
       type: GET_BALANCE,
       data: { userId },
     });
@@ -207,8 +147,7 @@ transactionRoute.post("/withdraw", async (req, res) => {
 
     const txnId = `withdraw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Send withdrawal request to engine
-    const response = await sendToEngine(userId, {
+    await sendToEngine({
       type: OFF_RAMP,
       data: {
         userId,
@@ -248,8 +187,7 @@ transactionRoute.get("/balance/:userId", async (req, res) => {
       });
     }
 
-    // Request balance from engine
-    const response = await sendToEngine(userId, {
+    const response = await sendToEngine({
       type: GET_BALANCE,
       data: { userId },
     });
