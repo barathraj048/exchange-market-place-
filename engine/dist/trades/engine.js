@@ -1,6 +1,6 @@
-// engine.ts
+// engine.ts - Complete version with deposit and withdraw
 import fs from "fs";
-import { CANCEL_ORDER as CancelOrder, CREATE_ORDER as CreateOrder, GET_DEPTH as getDepth, GET_OPEN_ORDERS as getOpenOrders, ON_RAMP as onRamp, } from "../types/api-types.js";
+import { CANCEL_ORDER as CancelOrder, CREATE_ORDER as CreateOrder, GET_DEPTH as getDepth, GET_OPEN_ORDERS as getOpenOrders, GET_BALANCE as GetBalance, ON_RAMP as onRamp, OFF_RAMP as offRamp, } from "../types/api-types.js";
 export const BASE_CURRENCY = "INR";
 import { orderBook } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
@@ -12,10 +12,10 @@ export class Engine {
     constructor() {
         // load snapshot sync (keeps constructor sync)
         try {
-            if (process.env.WITH_SNAPSHORT && fs.existsSync(this.snapshotPath)) {
+            if (process.env.WITH_SNAPSHOT && fs.existsSync(this.snapshotPath)) {
                 const raw = fs.readFileSync(this.snapshotPath, "utf-8");
                 const snapObj = JSON.parse(raw);
-                this.orderBook = (snapObj.orderBook || []).map((o) => new orderBook(o.bits || [], o.asks || [], o.base_asset || o.baseAsset || "TATA", o.currentPrice || 0, o.lastTradeId || 0));
+                this.orderBook = (snapObj.orderBook || []).map((o) => new orderBook(o.bids || o.bits || [], o.asks || [], o.base_asset || o.baseAsset || "TATA", o.currentPrice || 0, o.lastTradeId || 0));
                 this.balances = new Map(snapObj.balance || []);
                 console.log("Loaded snapshot:", this.snapshotPath);
             }
@@ -80,6 +80,7 @@ export class Engine {
                             orderId: "",
                             executedQuantity: 0,
                             remainingQuantity: 0,
+                            error: e.message,
                         },
                     });
                 }
@@ -89,16 +90,17 @@ export class Engine {
                 try {
                     const orderId = message.data.orderId;
                     const market = message.data.market;
-                    const base_assert = market.split("_")[0];
-                    const quote_assert = market.split("_")[1];
-                    if (!base_assert || !quote_assert) {
+                    const base_asset = market.split("_")[0];
+                    const quote_asset = market.split("_")[1];
+                    if (!base_asset || !quote_asset) {
                         throw new Error("Invalid market format");
                     }
-                    const cancelOrderBook = this.orderBook.find((o) => o.base_asset === base_assert);
+                    const cancelOrderBook = this.orderBook.find((o) => o.base_asset === base_asset);
                     if (!cancelOrderBook)
                         throw new Error("Order book not found");
-                    // find in asks or bits
-                    const foundOrder = cancelOrderBook.asks.find((o) => o.orderId === orderId) || cancelOrderBook.bits.find((o) => o.orderId === orderId);
+                    // find in asks or bids
+                    const foundOrder = cancelOrderBook.asks.find((o) => o.orderId === orderId) ||
+                        cancelOrderBook.bits.find((o) => o.orderId === orderId);
                     if (!foundOrder)
                         throw new Error("Order not found");
                     // compute remaining value/quantity and release locked funds accordingly
@@ -107,9 +109,10 @@ export class Engine {
                         // BUY had quote locked (price * remainingQty)
                         const release = remainingQty * foundOrder.price;
                         const userBal = this.balances.get(ClientId);
-                        if (userBal && userBal[quote_assert]) {
-                            userBal[quote_assert].locked = Math.max(0, userBal[quote_assert].locked - release);
-                            userBal[quote_assert].available = (userBal[quote_assert].available || 0) + release;
+                        if (userBal && userBal[quote_asset]) {
+                            userBal[quote_asset].locked = Math.max(0, userBal[quote_asset].locked - release);
+                            userBal[quote_asset].available =
+                                (userBal[quote_asset].available || 0) + release;
                         }
                         // publish depth update for that price level
                         this.updateDepth(market, orderId, foundOrder.price);
@@ -118,9 +121,10 @@ export class Engine {
                         // SELL had base locked (remainingQty)
                         const release = remainingQty;
                         const userBal = this.balances.get(ClientId);
-                        if (userBal && userBal[base_assert]) {
-                            userBal[base_assert].locked = Math.max(0, userBal[base_assert].locked - release);
-                            userBal[base_assert].available = (userBal[base_assert].available || 0) + release;
+                        if (userBal && userBal[base_asset]) {
+                            userBal[base_asset].locked = Math.max(0, userBal[base_asset].locked - release);
+                            userBal[base_asset].available =
+                                (userBal[base_asset].available || 0) + release;
                         }
                         this.updateDepth(market, orderId, foundOrder.price);
                     }
@@ -154,8 +158,54 @@ export class Engine {
                 break;
             }
             case onRamp: {
-                const amount = Number(message.data.amount);
-                this.onRamp(ClientId, amount);
+                try {
+                    const amount = Number(message.data.amount);
+                    this.onRamp(ClientId, amount);
+                    // Send confirmation back to API
+                    redisManager.publishToApi(ClientId, {
+                        type: "DEPOSIT_SUCCESS",
+                        payload: {
+                            amount,
+                            currency: BASE_CURRENCY,
+                            balance: this.getBalances(ClientId),
+                        },
+                    });
+                }
+                catch (e) {
+                    console.error(`Error processing deposit for user ${ClientId}:`, e);
+                    redisManager.publishToApi(ClientId, {
+                        type: "DEPOSIT_FAILED",
+                        payload: {
+                            error: e.message || "Deposit failed",
+                        },
+                    });
+                }
+                break;
+            }
+            case offRamp: {
+                try {
+                    const amount = Number(message.data.amount);
+                    const asset = message.data.asset;
+                    this.offRamp(ClientId, amount, asset);
+                    // Send confirmation back to API
+                    redisManager.publishToApi(ClientId, {
+                        type: "WITHDRAW_SUCCESS",
+                        payload: {
+                            amount,
+                            asset,
+                            balance: this.getBalances(ClientId),
+                        },
+                    });
+                }
+                catch (e) {
+                    console.error(`Error processing withdrawal for user ${ClientId}:`, e);
+                    redisManager.publishToApi(ClientId, {
+                        type: "WITHDRAW_FAILED",
+                        payload: {
+                            error: e.message || "Withdrawal failed",
+                        },
+                    });
+                }
                 break;
             }
             case getDepth: {
@@ -180,6 +230,24 @@ export class Engine {
                 }
                 break;
             }
+            case GetBalance: {
+                try {
+                    const userId = message.data.userId || ClientId;
+                    const balance = this.getBalances(userId);
+                    redisManager.publishToApi(ClientId, {
+                        type: "BALANCE_RESPONSE",
+                        payload: balance,
+                    });
+                }
+                catch (e) {
+                    console.error(`Error fetching balance for user ${ClientId}:`, e);
+                    redisManager.publishToApi(ClientId, {
+                        type: "BALANCE_RESPONSE",
+                        payload: {},
+                    });
+                }
+                break;
+            }
             default:
                 // unknown message type - ignore or log
                 console.warn("Unhandled message type:", message.type);
@@ -197,23 +265,39 @@ export class Engine {
             });
         }
         else {
-            balance[BASE_CURRENCY] = balance[BASE_CURRENCY] || { available: 0, locked: 0 };
+            balance[BASE_CURRENCY] = balance[BASE_CURRENCY] || {
+                available: 0,
+                locked: 0,
+            };
             balance[BASE_CURRENCY].available += amount;
         }
     }
+    offRamp(ClientId, amount, asset) {
+        const balance = this.balances.get(ClientId);
+        if (!balance) {
+            throw new Error("User balance not found");
+        }
+        if (!balance[asset]) {
+            throw new Error(`Asset ${asset} not found in user balance`);
+        }
+        if (balance[asset].available < amount) {
+            throw new Error(`Insufficient ${asset} balance`);
+        }
+        balance[asset].available -= amount;
+    }
     // Accepts market (either base or full "BASE_QUOTE"), orderId, price
-    updateDepth(maker, orderId, price) {
-        // maker might be "BASE" or "BASE_QUOTE"
-        const base = maker.includes("_") ? maker.split("_")[0] : maker;
+    updateDepth(market, orderId, price) {
+        // market might be "BASE" or "BASE_QUOTE"
+        const base = market.includes("_") ? market.split("_")[0] : market;
         const orderBook = this.orderBook.find((o) => o.base_asset === base);
         if (!orderBook)
             return;
-        const market = `${orderBook.base_asset}_${orderBook.quote_asset || BASE_CURRENCY}`;
+        const fullMarket = `${orderBook.base_asset}_${orderBook.quote_asset || BASE_CURRENCY}`;
         const depth = orderBook.getDepth();
         const updatedBids = depth.bids.filter((b) => b[0] === price.toString());
         const updatedAsks = depth.asks.filter((a) => a[0] === price.toString());
-        redisManager.publishTrade(`depth@${market}`, {
-            stream: `depth@${market}`,
+        redisManager.publishTrade(`depth@${fullMarket}`, {
+            stream: `depth@${fullMarket}`,
             data: {
                 e: "depth",
                 a: updatedAsks.length ? updatedAsks : [[price.toString(), "0"]],
@@ -222,30 +306,30 @@ export class Engine {
         });
     }
     createOrder(quantity, price, side, market, ClientId) {
-        const base_assert = market.split("_")[0];
-        const quote_assert = market.split("_")[1];
-        if (!base_assert || !quote_assert) {
+        const base_asset = market.split("_")[0];
+        const quote_asset = market.split("_")[1];
+        if (!base_asset || !quote_asset) {
             throw new Error("Invalid market format");
         }
-        const orderBook = this.orderBook.find((o) => o.base_asset === base_assert && o.quote_asset === quote_assert);
+        const orderBook = this.orderBook.find((o) => o.base_asset === base_asset && o.quote_asset === quote_asset);
         if (!orderBook) {
-            console.warn("Order book not found for market:", market);
-            // still check balances/throw if needed
+            throw new Error(`Order book not found for market: ${market}`);
         }
         // check and lock funds (throws if insufficient)
-        this.checkAndLock(quantity, price, side, base_assert, quote_assert, ClientId);
+        this.checkAndLock(quantity, price, side, base_asset, quote_asset, ClientId);
         const order = {
-            quortAssert: quote_assert, // kept original property name to match your order type
+            quortAssert: quote_asset,
             price,
             quantity,
             side,
             userId: ClientId,
             filled: 0,
-            orderId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+            orderId: Math.random().toString(36).substring(2, 15) +
+                Math.random().toString(36).substring(2, 15),
         };
         const { fills, executedQuantity } = orderBook.addOrder(order);
         // update balances as per fills
-        this.updateBalances(ClientId, executedQuantity, fills, base_assert, quote_assert, side);
+        this.updateBalances(ClientId, executedQuantity, fills, base_asset, quote_asset, side);
         // persist and publish
         this.createDbTrade(fills, market, side);
         this.createDbOrder(order, fills, executedQuantity, market);
@@ -254,7 +338,8 @@ export class Engine {
         return { executedQty: executedQuantity, fills, orderId: order.orderId };
     }
     publishWsDepth(side, market, price, fills) {
-        const orderBook = this.orderBook.find((o) => o.base_asset === market.split("_")[0] && o.quote_asset === market.split("_")[1]);
+        const orderBook = this.orderBook.find((o) => o.base_asset === market.split("_")[0] &&
+            o.quote_asset === market.split("_")[1]);
         if (!orderBook)
             return;
         const depth = orderBook.getDepth();
@@ -316,7 +401,7 @@ export class Engine {
             redisManager.pushToDb({
                 type: ORDER_UPDATE,
                 data: {
-                    orderId: fill.markerOrderId || fill.makerOrderId || "",
+                    orderId: fill.markerOrderId || "",
                     executedQuantity: fill.quantity,
                 },
             });
@@ -331,25 +416,31 @@ export class Engine {
                     price: fill.price,
                     quantity: fill.quantity,
                     timeStramp: Date.now(),
-                    isBuyerMaker: side == "SELL" ? true : false, // if sell then buyer is maker
+                    isBuyerMaker: side == "SELL" ? true : false,
                     quoteQuantity: (fill.price * fill.quantity).toString(),
                     market,
                 },
             });
         });
     }
-    updateBalances(ClientId, executedQuantity, fills, base_assert, quote_assert, side) {
+    updateBalances(ClientId, executedQuantity, fills, base_asset, quote_asset, side) {
         const userBalance = this.balances.get(ClientId);
         if (!userBalance)
             return;
         // ensure keys exist
-        userBalance[base_assert] = userBalance[base_assert] || { available: 0, locked: 0 };
-        userBalance[quote_assert] = userBalance[quote_assert] || { available: 0, locked: 0 };
+        userBalance[base_asset] = userBalance[base_asset] || {
+            available: 0,
+            locked: 0,
+        };
+        userBalance[quote_asset] = userBalance[quote_asset] || {
+            available: 0,
+            locked: 0,
+        };
         if (side === "BUY") {
             fills.forEach((fill) => {
                 // buyer receives base asset quantity, and quote locked decreases by price*qty
-                const baseBalance = userBalance[base_assert];
-                const quoteBalance = userBalance[quote_assert];
+                const baseBalance = userBalance[base_asset];
+                const quoteBalance = userBalance[quote_asset];
                 if (baseBalance)
                     baseBalance.available += fill.quantity;
                 if (quoteBalance)
@@ -359,8 +450,8 @@ export class Engine {
         else {
             fills.forEach((fill) => {
                 // seller had base locked and now base locked reduces; quote available increases
-                const baseBalance = userBalance[base_assert];
-                const quoteBalance = userBalance[quote_assert];
+                const baseBalance = userBalance[base_asset];
+                const quoteBalance = userBalance[quote_asset];
                 if (baseBalance)
                     baseBalance.locked = Math.max(0, baseBalance.locked - fill.quantity);
                 if (quoteBalance)
@@ -368,27 +459,27 @@ export class Engine {
             });
         }
     }
-    checkAndLock(quantity, price, side, base_assert, quote_assert, ClientId) {
+    checkAndLock(quantity, price, side, base_asset, quote_asset, ClientId) {
         // ensure user exists
         const userBal = this.balances.get(ClientId);
         if (!userBal)
             throw new Error("User balance not found");
-        userBal[base_assert] = userBal[base_assert] || { available: 0, locked: 0 };
-        userBal[quote_assert] = userBal[quote_assert] || { available: 0, locked: 0 };
+        userBal[base_asset] = userBal[base_asset] || { available: 0, locked: 0 };
+        userBal[quote_asset] = userBal[quote_asset] || { available: 0, locked: 0 };
         if (side === "BUY") {
             const cost = price * quantity;
-            if ((userBal[quote_assert].available || 0) < cost) {
+            if ((userBal[quote_asset].available || 0) < cost) {
                 throw new Error("Insufficient balance");
             }
-            userBal[quote_assert].available -= cost;
-            userBal[quote_assert].locked += cost;
+            userBal[quote_asset].available -= cost;
+            userBal[quote_asset].locked += cost;
         }
         else {
-            if ((userBal[base_assert].available || 0) < quantity) {
+            if ((userBal[base_asset].available || 0) < quantity) {
                 throw new Error("Insufficient balance");
             }
-            userBal[base_assert].available -= quantity;
-            userBal[base_assert].locked += quantity;
+            userBal[base_asset].available -= quantity;
+            userBal[base_asset].locked += quantity;
         }
     }
     setBaseBalances() {
@@ -400,6 +491,9 @@ export class Engine {
                 TATA: { available: 10_000_000, locked: 0 },
             });
         });
+    }
+    getBalances(ClientId) {
+        return this.balances.get(ClientId) || {};
     }
 }
 //# sourceMappingURL=engine.js.map

@@ -1,4 +1,4 @@
-// redisManager.ts
+// engine/redisManager.ts
 import { createClient, type RedisClientType } from "redis";
 import { ADD_TRADE, ORDER_UPDATE } from "./types/index.js";
 

@@ -1,3 +1,4 @@
+//types/wstypes.ts
 export type TradeAddedMessage = {
   stream: string;
   data: {

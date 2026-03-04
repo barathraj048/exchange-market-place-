@@ -1,3 +1,4 @@
+//api/src/RedisManager.ts
 import { createClient, type RedisClientType } from 'redis';
 import { type MessageToEngine } from './types/to.js';
 import { type MessageFromOrderbook } from './types/index.js';
