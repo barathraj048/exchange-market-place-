@@ -11,7 +11,7 @@ import {
   type MessageFromApi,
 } from "../types/api-types.js";
 
-export const BASE_CURRENCY = "INR";
+export const BASE_CURRENCY = "USD";
 
 import { orderBook, type order, type fills } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
@@ -44,7 +44,7 @@ export class Engine {
             o.lastTradeId || 0
           )
         );
-        this.balances = new Map(snapObj.balance || []);
+        this.balances = this.normalizeBalances(new Map(snapObj.balance || []));
         console.log("Loaded snapshot:", this.snapshotPath);
       } else {
         // default starting state
@@ -65,6 +65,17 @@ export class Engine {
         console.error("saveSnapshot error:", e);
       }
     }, 60 * 1000);
+  }
+
+
+  private normalizeBalances(rawBalances: Map<string, UserBalance>) {
+    rawBalances.forEach((wallet) => {
+      if (!wallet[BASE_CURRENCY] && wallet.INR) {
+        wallet[BASE_CURRENCY] = wallet.INR;
+        delete wallet.INR;
+      }
+    });
+    return rawBalances;
   }
 
   saveSnapshot() {
