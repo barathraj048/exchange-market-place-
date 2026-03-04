@@ -11,7 +11,7 @@ import {
   type MessageFromApi,
 } from "../types/api-types.js";
 
-export const BASE_CURRENCY = "INR";
+export const BASE_CURRENCY = "USD";
 
 import { orderBook, type order, type fills } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
@@ -44,7 +44,7 @@ export class Engine {
             o.lastTradeId || 0
           )
         );
-        this.balances = new Map(snapObj.balance || []);
+        this.balances = this.normalizeBalances(new Map(snapObj.balance || []));
         console.log("Loaded snapshot:", this.snapshotPath);
       } else {
         // default starting state
@@ -65,6 +65,17 @@ export class Engine {
         console.error("saveSnapshot error:", e);
       }
     }, 60 * 1000);
+  }
+
+
+  private normalizeBalances(rawBalances: Map<string, UserBalance>) {
+    rawBalances.forEach((wallet) => {
+      if (!wallet[BASE_CURRENCY] && wallet.INR) {
+        wallet[BASE_CURRENCY] = wallet.INR;
+        delete wallet.INR;
+      }
+    });
+    return rawBalances;
   }
 
   saveSnapshot() {
@@ -98,7 +109,7 @@ export class Engine {
             price,
             side,
             market,
-            ClientId
+            message.data.userId
           );
 
           // publish order placed
@@ -156,7 +167,7 @@ export class Engine {
           if (foundOrder.side === "BUY") {
             // BUY had quote locked (price * remainingQty)
             const release = remainingQty * foundOrder.price;
-            const userBal = this.balances.get(ClientId);
+            const userBal = this.balances.get(foundOrder.userId);
             if (userBal && userBal[quote_asset]) {
               userBal[quote_asset].locked = Math.max(
                 0,
@@ -170,7 +181,7 @@ export class Engine {
           } else {
             // SELL had base locked (remainingQty)
             const release = remainingQty;
-            const userBal = this.balances.get(ClientId);
+            const userBal = this.balances.get(foundOrder.userId);
             if (userBal && userBal[base_asset]) {
               userBal[base_asset].locked = Math.max(
                 0,
@@ -202,7 +213,7 @@ export class Engine {
           const book = this.orderBook.find(
             (o) => o.base_asset === base && o.quote_asset === quote
           );
-          const openOrders: order[] = book?.getOpenOrders(ClientId) || [];
+          const openOrders: order[] = book?.getOpenOrders(message.data.userId) || [];
           redisManager.publishToApi(ClientId, {
             type: "OPEN_ORDERS",
             payload: openOrders,
@@ -216,7 +227,8 @@ export class Engine {
       case onRamp: {
         try {
           const amount = Number(message.data.amount);
-          this.onRamp(ClientId, amount);
+          const userId = message.data.userId;
+          this.onRamp(userId, amount);
           
           // Send confirmation back to API
           redisManager.publishToApi(ClientId, {
@@ -224,11 +236,11 @@ export class Engine {
             payload: {
               amount,
               currency: BASE_CURRENCY,
-              balance: this.getBalances(ClientId),
+              balance: this.getBalances(userId),
             },
           });
         } catch (e: any) {
-          console.error(`Error processing deposit for user ${ClientId}:`, e);
+          console.error(`Error processing deposit for user ${message.data.userId}:`, e);
           redisManager.publishToApi(ClientId, {
             type: "DEPOSIT_FAILED",
             payload: {
@@ -243,7 +255,8 @@ export class Engine {
         try {
           const amount = Number(message.data.amount);
           const asset = message.data.asset;
-          this.offRamp(ClientId, amount, asset);
+          const userId = message.data.userId;
+          this.offRamp(userId, amount, asset);
           
           // Send confirmation back to API
           redisManager.publishToApi(ClientId, {
@@ -251,11 +264,11 @@ export class Engine {
             payload: {
               amount,
               asset,
-              balance: this.getBalances(ClientId),
+              balance: this.getBalances(userId),
             },
           });
         } catch (e: any) {
-          console.error(`Error processing withdrawal for user ${ClientId}:`, e);
+          console.error(`Error processing withdrawal for user ${message.data.userId}:`, e);
           redisManager.publishToApi(ClientId, {
             type: "WITHDRAW_FAILED",
             payload: {
