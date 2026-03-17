@@ -10,19 +10,19 @@ export function TradeView({ market }: { market: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use a consistent interval for both historical and live data!
+  // Use a consistent interval for both historical and live data
   const CHART_INTERVAL = "1m"; 
 
-  // Load historical klines
+  // 1. Load historical klines
   useEffect(() => {
     const loadHistoricalData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Backpack API expects seconds for startTime/endTime
         const endTime = Math.floor(Date.now() / 1000);  
-        const startTime = endTime - 24 * 60 * 60;
+        // 12 hours lookback to respect API limits (720 candles)
+        const startTime = endTime - (12 * 60 * 60);
 
         console.log(`Loading klines from ${new Date(startTime * 1000)} to ${new Date(endTime * 1000)}`);
       
@@ -36,7 +36,6 @@ export function TradeView({ market }: { market: string }) {
 
         const klines = await response.json();
 
-        // FIX: Removed parseInt() from start and end. Keep them as the raw ISO strings Backpack provides.
         const formattedKlines: KLine[] = klines.map((k: any) => ({
           open: k.open,
           high: k.high,
@@ -61,11 +60,10 @@ export function TradeView({ market }: { market: string }) {
     loadHistoricalData();
   }, [market]);
 
-  // Initialize chart with historical data
+  // 2. Initialize chart with historical data
   useEffect(() => {
     if (!chartRef.current || klineData.length === 0 || isLoading) return;
 
-    // FIX: Parse the ISO string directly into a Date object. (Using 'start' is standard for candles)
     const chartManager = new ChartManager(
       chartRef.current,
       klineData
@@ -74,7 +72,8 @@ export function TradeView({ market }: { market: string }) {
           high: parseFloat(x.high),
           low: parseFloat(x.low),
           open: parseFloat(x.open),
-          timestamp: new Date(x.start), 
+          // FIX: Pass raw milliseconds! Do NOT divide by 1000 here.
+          timestamp: new Date(x.start).getTime(), 
         }))
         .sort((x, y) => (x.timestamp < y.timestamp ? -1 : 1)),
       {
@@ -94,7 +93,7 @@ export function TradeView({ market }: { market: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, market]); 
 
-  // Handle Real-time updates
+  // 3. Handle Real-time updates
   useEffect(() => {
     if (isLoading || klineData.length === 0) return; 
 
@@ -104,7 +103,7 @@ export function TradeView({ market }: { market: string }) {
     const callback = (data: KLine) => {
       setKlineData((prevKlines) => {
         const existingIndex = prevKlines.findIndex(
-          (k) => k.start === data.start // Better to match by 'start' time
+          (k) => k.start === data.start 
         );
 
         if (existingIndex !== -1) {
@@ -113,7 +112,7 @@ export function TradeView({ market }: { market: string }) {
           return updated;
         } else {
           const updated = [...prevKlines, data];
-          const maxCandles = 7 * 24 * 60; // Adjust max candles based on your chosen interval
+          const maxCandles = 12 * 60; // Keep the array size matched to your 12-hour lookback
           return updated.length > maxCandles ? updated.slice(-maxCandles) : updated;
         }
       });
@@ -124,7 +123,8 @@ export function TradeView({ market }: { market: string }) {
           high: parseFloat(data.high),
           low: parseFloat(data.low),
           open: parseFloat(data.open),
-          timestamp: new Date(data.start), // FIX: Parse ISO string directly
+          // FIX: Pass raw milliseconds! Do NOT divide by 1000 here.
+          timestamp: new Date(data.start).getTime(), 
         });
       }
     };

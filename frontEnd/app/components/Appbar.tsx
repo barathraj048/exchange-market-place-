@@ -19,7 +19,7 @@ export const Appbar = () => {
   const [balance, setBalance] = useState<Balance>({});
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawAsset, setWithdrawAsset] = useState("INR");
+  const [withdrawAsset, setWithdrawAsset] = useState("USD");
   const [loading, setLoading] = useState(false);
 
   const userId = "123"; // Replace with actual user ID from auth
@@ -27,6 +27,17 @@ export const Appbar = () => {
   useEffect(() => {
     fetchBalance();
   }, []);
+
+  useEffect(() => {
+    const assets = Object.keys(balance);
+    if (!assets.length) {
+      return;
+    }
+
+    if (!balance[withdrawAsset]) {
+      setWithdrawAsset(getPrimaryCashAsset(balance));
+    }
+  }, [balance, withdrawAsset]);
 
   const fetchBalance = async () => {
     try {
@@ -62,7 +73,7 @@ export const Appbar = () => {
       const data = await res.json();
 
       if (data.success) {
-        alert(`Successfully deposited ${depositAmount} INR`);
+        alert(`Successfully deposited ${depositAmount} ${primaryCashAsset}`);
         setDepositAmount("");
         setShowDepositModal(false);
         await fetchBalance();
@@ -122,9 +133,11 @@ export const Appbar = () => {
     }
   };
 
+  const primaryCashAsset = getPrimaryCashAsset(balance);
+  const primaryCashBalance = balance[primaryCashAsset] || { available: 0, locked: 0 };
+
   const totalBalanceINR = Object.entries(balance).reduce((sum, [asset, bal]) => {
-    // For now, just sum INR. In production, you'd convert all assets to INR
-    if (asset === "INR") {
+    if (asset === primaryCashAsset) {
       return sum + bal.available + bal.locked;
     }
     return sum;
@@ -164,7 +177,7 @@ export const Appbar = () => {
               <div className="flex flex-col">
                 <span className="text-[10px] text-slate-500 uppercase">Total Balance</span>
                 <span className="text-sm font-semibold text-white">
-                  ₹{totalBalanceINR.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  {formatAssetAmount(totalBalanceINR, primaryCashAsset)}
                 </span>
               </div>
             </div>
@@ -186,7 +199,7 @@ export const Appbar = () => {
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-[#1A1D24] rounded-xl border border-slate-700 w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Deposit INR</h2>
+              <h2 className="text-xl font-semibold text-white">Deposit {primaryCashAsset}</h2>
               <button
                 onClick={() => setShowDepositModal(false)}
                 className="text-slate-400 hover:text-white transition-colors"
@@ -212,14 +225,14 @@ export const Appbar = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-400">Current Balance</span>
                 <span className="text-lg font-semibold text-white">
-                  ₹{(balance.INR?.available || 0).toLocaleString("en-IN")}
+                  {formatAssetAmount(primaryCashBalance.available, primaryCashAsset)}
                 </span>
               </div>
-              {balance.INR?.locked > 0 && (
+              {primaryCashBalance.locked > 0 && (
                 <div className="flex justify-between items-center mt-2 text-xs">
                   <span className="text-slate-500">Locked</span>
                   <span className="text-slate-400">
-                    ₹{balance.INR.locked.toLocaleString("en-IN")}
+                    {formatAssetAmount(primaryCashBalance.locked, primaryCashAsset)}
                   </span>
                 </div>
               )}
@@ -227,7 +240,7 @@ export const Appbar = () => {
 
             {/* Amount Input */}
             <div className="mb-6">
-              <label className="block text-sm text-slate-400 mb-2">Amount (INR)</label>
+              <label className="block text-sm text-slate-400 mb-2">Amount ({primaryCashAsset})</label>
               <input
                 type="number"
                 value={depositAmount}
@@ -242,7 +255,7 @@ export const Appbar = () => {
                     onClick={() => setDepositAmount(amount.toString())}
                     className="flex-1 bg-[#0C0E12] border border-slate-700 rounded-lg py-2 text-xs text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
                   >
-                    ₹{amount.toLocaleString("en-IN")}
+                    {formatAssetAmount(amount, primaryCashAsset)}
                   </button>
                 ))}
               </div>
@@ -364,3 +377,19 @@ export const Appbar = () => {
     </>
   );
 };
+
+function getPrimaryCashAsset(balance: Balance) {
+  const preferredAssets = ["USD", "INR", "USDC"];
+
+  for (const asset of preferredAssets) {
+    if (balance[asset]) {
+      return asset;
+    }
+  }
+
+  return Object.keys(balance)[0] || "USD";
+}
+
+function formatAssetAmount(amount: number, asset: string) {
+  return `${asset} ${amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}

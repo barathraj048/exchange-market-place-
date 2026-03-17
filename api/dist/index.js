@@ -8,6 +8,7 @@ import { klineData } from './routes/klineData.js';
 import { transactionRoute } from './routes/tracsactionRoute.js';
 const app = express();
 let port = 3001;
+app.set("etag", false);
 app.use(cors());
 app.use(express.json());
 app.use("/api/v1/order", orderRouter);

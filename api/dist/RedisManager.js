@@ -1,3 +1,4 @@
+//api/src/RedisManager.ts
 import { createClient } from 'redis';
 import {} from './types/to.js';
 import {} from './types/index.js';
@@ -24,7 +25,7 @@ export class RedisManager {
                 this.client.unsubscribe(id);
                 resolve(JSON.parse(message));
             });
-            this.publisher.rPush("message", JSON.stringify({ clientId: id, message }));
+            this.publisher.rPush("message", JSON.stringify({ ClientId: id, message }));
         });
     }
     getRandomClientId() {

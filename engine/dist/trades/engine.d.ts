@@ -1,5 +1,5 @@
 import { type MessageFromApi } from "../types/api-types.js";
-export declare const BASE_CURRENCY = "INR";
+export declare const BASE_CURRENCY = "USD";
 import { type order, type fills } from "./orderBook.js";
 interface UserBalance {
     [key: string]: {
@@ -12,6 +12,7 @@ export declare class Engine {
     private balances;
     private snapshotPath;
     constructor();
+    private normalizeBalances;
     saveSnapshot(): void;
     process({ message, ClientId }: {
         message: MessageFromApi;

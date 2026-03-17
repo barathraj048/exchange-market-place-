@@ -17,6 +17,8 @@ export function SwapUI({ market }: { market: string }) {
   const [baseAsset, quoteAsset] = market.split("_");
   const availableQuote = balance[quoteAsset]?.available || 0;
   const availableBase = balance[baseAsset]?.available || 0;
+  const primaryCashAsset = getPrimaryCashAsset(balance, quoteAsset);
+  const primaryCashBalance = balance[primaryCashAsset] || { available: 0, locked: 0 };
 
   // Fetch balance on mount and after transactions
   useEffect(() => {
@@ -57,7 +59,7 @@ export function SwapUI({ market }: { market: string }) {
       const data = await res.json();
 
       if (data.success) {
-        alert(`Deposited ${depositAmount} INR successfully!`);
+        alert(`Deposited ${depositAmount} ${primaryCashAsset} successfully!`);
         setDepositAmount(0);
         setShowDeposit(false);
         // Refresh balance
@@ -157,12 +159,12 @@ export function SwapUI({ market }: { market: string }) {
           
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="bg-baseBackgroundL2 p-2 rounded">
-              <div className="text-baseTextMedEmphasis">INR</div>
+              <div className="text-baseTextMedEmphasis">{primaryCashAsset}</div>
               <div className="text-baseTextHighEmphasis font-medium">
-                {balance.INR?.available?.toFixed(2) || "0.00"}
+                {primaryCashBalance.available?.toFixed(2) || "0.00"}
               </div>
               <div className="text-baseTextMedEmphasis text-[10px]">
-                Locked: {balance.INR?.locked?.toFixed(2) || "0.00"}
+                Locked: {primaryCashBalance.locked?.toFixed(2) || "0.00"}
               </div>
             </div>
             <div className="bg-baseBackgroundL2 p-2 rounded">
@@ -181,7 +183,7 @@ export function SwapUI({ market }: { market: string }) {
             <div className="mt-3 p-3 bg-baseBackgroundL2 rounded">
               <input
                 type="number"
-                placeholder="Amount to deposit (INR)"
+                placeholder={`Amount to deposit (${primaryCashAsset})`}
                 className="w-full h-10 rounded border-2 border-baseBorderLight bg-baseBackgroundL1 px-3 text-sm"
                 value={depositAmount || ""}
                 onChange={(e) => setDepositAmount(Number(e.target.value))}
@@ -412,4 +414,19 @@ function SellButton({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       <p className="text-center text-sm font-semibold text-redText">Sell</p>
     </div>
   );
+}
+
+function getPrimaryCashAsset(
+  balance: {[key: string]: {available: number, locked: number}},
+  quoteAsset: string
+) {
+  const preferredAssets = [quoteAsset, "USD", "INR", "USDC"];
+
+  for (const asset of preferredAssets) {
+    if (balance[asset]) {
+      return asset;
+    }
+  }
+
+  return Object.keys(balance)[0] || quoteAsset || "USD";
 }

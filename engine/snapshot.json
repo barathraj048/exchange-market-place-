@@ -12,7 +12,7 @@
     [
       "1",
       {
-        "INR": {
+        "USD": {
           "available": 10000000,
           "locked": 0
         },
@@ -25,7 +25,7 @@
     [
       "2",
       {
-        "INR": {
+        "USD": {
           "available": 10000000,
           "locked": 0
         },
@@ -38,7 +38,7 @@
     [
       "5",
       {
-        "INR": {
+        "USD": {
           "available": 10000000,
           "locked": 0
         },

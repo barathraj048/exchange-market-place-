@@ -1,7 +1,7 @@
 // engine.ts - Complete version with deposit and withdraw
 import fs from "fs";
 import { CANCEL_ORDER as CancelOrder, CREATE_ORDER as CreateOrder, GET_DEPTH as getDepth, GET_OPEN_ORDERS as getOpenOrders, GET_BALANCE as GetBalance, ON_RAMP as onRamp, OFF_RAMP as offRamp, } from "../types/api-types.js";
-export const BASE_CURRENCY = "INR";
+export const BASE_CURRENCY = "USD";
 import { orderBook } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
 import { ADD_TRADE, ORDER_UPDATE } from "../types/index.js";
@@ -16,7 +16,7 @@ export class Engine {
                 const raw = fs.readFileSync(this.snapshotPath, "utf-8");
                 const snapObj = JSON.parse(raw);
                 this.orderBook = (snapObj.orderBook || []).map((o) => new orderBook(o.bids || o.bits || [], o.asks || [], o.base_asset || o.baseAsset || "TATA", o.currentPrice || 0, o.lastTradeId || 0));
-                this.balances = new Map(snapObj.balance || []);
+                this.balances = this.normalizeBalances(new Map(snapObj.balance || []));
                 console.log("Loaded snapshot:", this.snapshotPath);
             }
             else {
@@ -40,6 +40,15 @@ export class Engine {
             }
         }, 60 * 1000);
     }
+    normalizeBalances(rawBalances) {
+        rawBalances.forEach((wallet) => {
+            if (!wallet[BASE_CURRENCY] && wallet.INR) {
+                wallet[BASE_CURRENCY] = wallet.INR;
+                delete wallet.INR;
+            }
+        });
+        return rawBalances;
+    }
     saveSnapshot() {
         const snapShortObj = {
             orderBook: this.orderBook.map((o) => o.getSnapshot()),
@@ -61,7 +70,7 @@ export class Engine {
                     const price = Number(message.data.price);
                     const side = message.data.side;
                     const market = message.data.market;
-                    const { executedQty, fills, orderId } = this.createOrder(quantity, price, side, market, ClientId);
+                    const { executedQty, fills, orderId } = this.createOrder(quantity, price, side, market, message.data.userId);
                     // publish order placed
                     redisManager.publishToApi(ClientId, {
                         type: "ORDER_PLACED",
@@ -108,7 +117,7 @@ export class Engine {
                     if (foundOrder.side === "BUY") {
                         // BUY had quote locked (price * remainingQty)
                         const release = remainingQty * foundOrder.price;
-                        const userBal = this.balances.get(ClientId);
+                        const userBal = this.balances.get(foundOrder.userId);
                         if (userBal && userBal[quote_asset]) {
                             userBal[quote_asset].locked = Math.max(0, userBal[quote_asset].locked - release);
                             userBal[quote_asset].available =
@@ -120,7 +129,7 @@ export class Engine {
                     else {
                         // SELL had base locked (remainingQty)
                         const release = remainingQty;
-                        const userBal = this.balances.get(ClientId);
+                        const userBal = this.balances.get(foundOrder.userId);
                         if (userBal && userBal[base_asset]) {
                             userBal[base_asset].locked = Math.max(0, userBal[base_asset].locked - release);
                             userBal[base_asset].available =
@@ -146,7 +155,7 @@ export class Engine {
                 try {
                     const [base, quote] = message.data.market.split("_");
                     const book = this.orderBook.find((o) => o.base_asset === base && o.quote_asset === quote);
-                    const openOrders = book?.getOpenOrders(ClientId) || [];
+                    const openOrders = book?.getOpenOrders(message.data.userId) || [];
                     redisManager.publishToApi(ClientId, {
                         type: "OPEN_ORDERS",
                         payload: openOrders,
@@ -160,19 +169,20 @@ export class Engine {
             case onRamp: {
                 try {
                     const amount = Number(message.data.amount);
-                    this.onRamp(ClientId, amount);
+                    const userId = message.data.userId;
+                    this.onRamp(userId, amount);
                     // Send confirmation back to API
                     redisManager.publishToApi(ClientId, {
                         type: "DEPOSIT_SUCCESS",
                         payload: {
                             amount,
                             currency: BASE_CURRENCY,
-                            balance: this.getBalances(ClientId),
+                            balance: this.getBalances(userId),
                         },
                     });
                 }
                 catch (e) {
-                    console.error(`Error processing deposit for user ${ClientId}:`, e);
+                    console.error(`Error processing deposit for user ${message.data.userId}:`, e);
                     redisManager.publishToApi(ClientId, {
                         type: "DEPOSIT_FAILED",
                         payload: {
@@ -186,19 +196,20 @@ export class Engine {
                 try {
                     const amount = Number(message.data.amount);
                     const asset = message.data.asset;
-                    this.offRamp(ClientId, amount, asset);
+                    const userId = message.data.userId;
+                    this.offRamp(userId, amount, asset);
                     // Send confirmation back to API
                     redisManager.publishToApi(ClientId, {
                         type: "WITHDRAW_SUCCESS",
                         payload: {
                             amount,
                             asset,
-                            balance: this.getBalances(ClientId),
+                            balance: this.getBalances(userId),
                         },
                     });
                 }
                 catch (e) {
-                    console.error(`Error processing withdrawal for user ${ClientId}:`, e);
+                    console.error(`Error processing withdrawal for user ${message.data.userId}:`, e);
                     redisManager.publishToApi(ClientId, {
                         type: "WITHDRAW_FAILED",
                         payload: {
