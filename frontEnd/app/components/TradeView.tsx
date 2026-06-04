@@ -10,7 +10,6 @@ export function TradeView({ market }: { market: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use a consistent interval for both historical and live data
   const CHART_INTERVAL = "1m"; 
 
   // 1. Load historical klines
@@ -21,10 +20,7 @@ export function TradeView({ market }: { market: string }) {
         setError(null);
 
         const endTime = Math.floor(Date.now() / 1000);  
-        // 12 hours lookback to respect API limits (720 candles)
         const startTime = endTime - (12 * 60 * 60);
-
-        console.log(`Loading klines from ${new Date(startTime * 1000)} to ${new Date(endTime * 1000)}`);
       
         const response = await fetch(
           `/api/proxy?symbol=${market}&interval=${CHART_INTERVAL}&startTime=${startTime}&endTime=${endTime}`
@@ -72,7 +68,7 @@ export function TradeView({ market }: { market: string }) {
           high: parseFloat(x.high),
           low: parseFloat(x.low),
           open: parseFloat(x.open),
-          // FIX: Pass raw milliseconds! Do NOT divide by 1000 here.
+          // Pass raw UTC milliseconds
           timestamp: new Date(x.start).getTime(), 
         }))
         .sort((x, y) => (x.timestamp < y.timestamp ? -1 : 1)),
@@ -112,7 +108,7 @@ export function TradeView({ market }: { market: string }) {
           return updated;
         } else {
           const updated = [...prevKlines, data];
-          const maxCandles = 12 * 60; // Keep the array size matched to your 12-hour lookback
+          const maxCandles = 12 * 60; 
           return updated.length > maxCandles ? updated.slice(-maxCandles) : updated;
         }
       });
@@ -123,7 +119,7 @@ export function TradeView({ market }: { market: string }) {
           high: parseFloat(data.high),
           low: parseFloat(data.low),
           open: parseFloat(data.open),
-          // FIX: Pass raw milliseconds! Do NOT divide by 1000 here.
+          // Pass raw UTC milliseconds
           timestamp: new Date(data.start).getTime(), 
         });
       }

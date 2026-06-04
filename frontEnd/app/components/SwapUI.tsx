@@ -53,6 +53,7 @@ export function SwapUI({ market }: { market: string }) {
         body: JSON.stringify({
           userId,
           amount: depositAmount,
+          asset: primaryCashAsset
         }),
       });
 

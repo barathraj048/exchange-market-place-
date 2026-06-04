@@ -81,7 +81,7 @@ transactionRoute.post("/", async (req, res) => {
 // POST /api/v1/transaction/deposit - Deposit funds (on-ramp)
 transactionRoute.post("/deposit", async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const { userId, amount,asset } = req.body;
 
     if (!userId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
@@ -97,6 +97,7 @@ transactionRoute.post("/deposit", async (req, res) => {
       data: {
         userId,
         amount: String(amount),
+        asset,
         txnId,
       },
     });
