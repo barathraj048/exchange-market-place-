@@ -18,7 +18,7 @@ export declare class Engine {
         message: MessageFromApi;
         ClientId: string;
     }): void;
-    onRamp(ClientId: string, amount: number): void;
+    onRamp(ClientId: string, amount: number, asset: string): void;
     offRamp(ClientId: string, amount: number, asset: string): void;
     updateDepth(market: string, orderId: string, price: number): void;
     createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string): {

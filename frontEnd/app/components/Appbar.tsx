@@ -171,26 +171,6 @@ export const Appbar = () => {
               Trade
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Balance Display - Backpack Style */}
-            <div className="hidden md:flex items-center gap-2 bg-[#1A1D24] rounded-lg px-4 py-2 border border-slate-700">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-slate-500 uppercase">Total Balance</span>
-                <span className="text-sm font-semibold text-white">
-                  {formatAssetAmount(totalBalanceINR, primaryCashAsset)}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <div onClick={() => setShowDepositModal(true)}>
-                <SuccessButton>Deposit</SuccessButton>
-              </div>
-              <div onClick={() => setShowWithdrawModal(true)}>
-                <PrimaryButton>Withdraw</PrimaryButton>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

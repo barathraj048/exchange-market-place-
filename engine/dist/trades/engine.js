@@ -170,11 +170,13 @@ export class Engine {
                 try {
                     const amount = Number(message.data.amount);
                     const userId = message.data.userId;
-                    this.onRamp(userId, amount);
+                    const asset = message.data.assert || BASE_CURRENCY;
+                    this.onRamp(userId, amount, asset);
                     // Send confirmation back to API
                     redisManager.publishToApi(ClientId, {
                         type: "DEPOSIT_SUCCESS",
                         payload: {
+                            txnId: message.data.txnId,
                             amount,
                             currency: BASE_CURRENCY,
                             balance: this.getBalances(userId),
@@ -265,22 +267,16 @@ export class Engine {
                 break;
         }
     }
-    onRamp(ClientId, amount) {
+    onRamp(ClientId, amount, asset) {
         const balance = this.balances.get(ClientId);
         if (!balance) {
             this.balances.set(ClientId, {
-                [BASE_CURRENCY]: {
-                    available: amount,
-                    locked: 0,
-                },
+                [asset]: { available: amount, locked: 0 },
             });
         }
         else {
-            balance[BASE_CURRENCY] = balance[BASE_CURRENCY] || {
-                available: 0,
-                locked: 0,
-            };
-            balance[BASE_CURRENCY].available += amount;
+            balance[asset] = balance[asset] || { available: 0, locked: 0 };
+            balance[asset].available += amount;
         }
     }
     offRamp(ClientId, amount, asset) {
