@@ -228,7 +228,7 @@ export class Engine {
         try {
           const amount = Number(message.data.amount);
           const userId = message.data.userId;
-          const asset=message.data.assert || BASE_CURRENCY
+          const asset=message.data.asset || BASE_CURRENCY
           this.onRamp(userId, amount,asset);
           
           // Send confirmation back to API

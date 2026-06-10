@@ -36,7 +36,7 @@ export type MessageFromApi =
         amount: string;
         txnId: string;
         userId: string;
-        assert:string;
+        asset:string;
       };
     }
   | {
