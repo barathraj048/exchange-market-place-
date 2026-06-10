@@ -1,5 +1,3 @@
-import type assert from "assert";
-
 // Complete api-types.ts with OFF_RAMP support
 export const CREATE_ORDER = "CREATE_ORDER";
 export const CANCEL_ORDER = "CANCEL_ORDER";
@@ -21,6 +19,7 @@ export type MessageFromApi =
         quantity: string;
         side: "BUY" | "SELL";
         market: string;
+        orderType?: "LIMIT" | "MARKET";
       };
     }
   | {
@@ -36,7 +35,7 @@ export type MessageFromApi =
         amount: string;
         txnId: string;
         userId: string;
-        asset:string;
+        asset?: string;
       };
     }
   | {

@@ -13,6 +13,12 @@ export declare class Engine {
     private snapshotPath;
     constructor();
     private normalizeBalances;
+    private getDefaultOrderBooks;
+    private parseMarket;
+    private getOrderBook;
+    private getOrCreateOrderBook;
+    private getOrCreateBalance;
+    private ensureAssetBalance;
     saveSnapshot(): void;
     process({ message, ClientId }: {
         message: MessageFromApi;
@@ -21,17 +27,19 @@ export declare class Engine {
     onRamp(ClientId: string, amount: number, asset: string): void;
     offRamp(ClientId: string, amount: number, asset: string): void;
     updateDepth(market: string, orderId: string, price: number): void;
-    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string): {
+    private estimateMarketBuyCost;
+    private assertMarketSellLiquidity;
+    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string, orderType?: "LIMIT" | "MARKET"): {
         executedQty: number;
         fills: fills[];
         orderId: string;
     };
     publishWsDepth(side: "BUY" | "SELL", market: string, price: number, fills: fills[]): void;
     publishWsTrades(fills: fills[], market: string, side: "BUY" | "SELL"): void;
-    createDbOrder(order: order, fills: fills[], executedQuantity: number, market: string): void;
+    createDbOrder(order: order, fills: fills[], executedQuantity: number, market: string, orderType: "LIMIT" | "MARKET"): void;
     createDbTrade(fills: fills[], market: string, side: "BUY" | "SELL"): void;
-    updateBalances(ClientId: string, executedQuantity: number, fills: fills[], base_asset: string, quote_asset: string, side: "BUY" | "SELL"): void;
-    checkAndLock(quantity: number, price: number, side: "BUY" | "SELL", base_asset: string, quote_asset: string, ClientId: string): void;
+    updateBalances(ClientId: string, fills: fills[], base_asset: string, quote_asset: string, side: "BUY" | "SELL", orderPrice: number, orderType: "LIMIT" | "MARKET"): void;
+    checkAndLock(quantity: number, quoteAmountToLock: number, side: "BUY" | "SELL", base_asset: string, quote_asset: string, ClientId: string): void;
     setBaseBalances(): void;
     getBalances(ClientId: string): UserBalance;
 }

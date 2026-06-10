@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export function SwapUI({ market }: { market: string }) {
   const [balance, setBalance] = useState<{[key: string]: {available: number, locked: number}}>({});
-  const [activeTab, setActiveTab] = useState("buy");
+  const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
   const [type, setType] = useState("limit");
   const [price, setPrice] = useState(0);
   const [quantity, setQuantity] = useState(0);
@@ -128,13 +128,15 @@ export function SwapUI({ market }: { market: string }) {
     if (activeTab === "buy") {
       // For buying, use quote asset balance
       const available = availableQuote;
+      if (type === "market") {
+        alert("Enter the base quantity manually for market buys");
+        return;
+      }
+
       if (type === "limit" && price > 0) {
         // quantity = (balance * percentage) / price
         const qty = (available * percentage) / price;
         setQuantity(Number(qty.toFixed(8)));
-      } else {
-        // For market orders, just set the quote amount
-        setQuantity(Number((available * percentage).toFixed(8)));
       }
     } else {
       // For selling, use base asset balance

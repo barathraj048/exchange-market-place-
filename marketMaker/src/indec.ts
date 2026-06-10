@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://localhost:3001";
 const TOTAL_BIDS = 15;
 const TOTAL_ASK = 15;
 const MARKET = "TATA_INR";
@@ -10,8 +10,8 @@ async function main() {
     const price = 1000 + Math.random() * 10;
     const openOrders = await axios.get(`${BASE_URL}/api/v1/order/open?userId=${USER_ID}&market=${MARKET}`);
 
-    const totalBids = openOrders.data.filter((o: any) => o.side === "buy").length;
-    const totalAsks = openOrders.data.filter((o: any) => o.side === "sell").length;
+    const totalBids = openOrders.data.filter((o: any) => String(o.side).toLowerCase() === "buy").length;
+    const totalAsks = openOrders.data.filter((o: any) => String(o.side).toLowerCase() === "sell").length;
 
     const cancelledBids = await cancelBidsMoreThan(openOrders.data, price);
     const cancelledAsks = await cancelAsksLessThan(openOrders.data, price);
@@ -51,7 +51,7 @@ async function main() {
 async function cancelBidsMoreThan(openOrders: any[], price: number) {
     let promises: any[] = [];
     openOrders.map(o => {
-        if (o.side === "buy" && (o.price > price || Math.random() < 0.1)) {
+        if (String(o.side).toLowerCase() === "buy" && (o.price > price || Math.random() < 0.1)) {
             promises.push(axios.delete(`${BASE_URL}/api/v1/order`, {
                 data: {
                     orderId: o.orderId,
@@ -67,7 +67,7 @@ async function cancelBidsMoreThan(openOrders: any[], price: number) {
 async function cancelAsksLessThan(openOrders: any[], price: number) {
     let promises: any[] = [];
     openOrders.map(o => {
-        if (o.side === "sell" && (o.price < price || Math.random() < 0.5)) {
+        if (String(o.side).toLowerCase() === "sell" && (o.price < price || Math.random() < 0.5)) {
             promises.push(axios.delete(`${BASE_URL}/api/v1/order`, {
                 data: {
                     orderId: o.orderId,

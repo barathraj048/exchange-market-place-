@@ -21,15 +21,16 @@ export declare class orderBook {
     quote_asset: string;
     currentPrice: number;
     lastTradeId: number;
-    constructor(bids: order[], asks: order[], base_assert: string, currentPrice: number, lastTradeId: number);
+    constructor(bids: order[], asks: order[], base_assert: string, quote_assert?: string, currentPrice?: number, lastTradeId?: number);
     getSnapshot(): {
         baseAsset: string;
+        quoteAsset: string;
         bids: order[];
         asks: order[];
         lastTradeId: number;
         currentPrice: number;
     };
-    addOrder(order: order): {
+    addOrder(order: order, shouldPost?: boolean): {
         fills: fills[];
         executedQuantity: number;
     };
@@ -45,6 +46,7 @@ export declare class orderBook {
         bids: [string, string][];
         asks: [string, string][];
     };
+    cancelOrder(orderId: string): order | undefined;
     getOpenOrders(userId: string): order[];
 }
 //# sourceMappingURL=orderBook.d.ts.map

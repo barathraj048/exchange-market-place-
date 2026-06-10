@@ -1,44 +1,49 @@
-import { BASE_CURRENCY } from "./engine.js";
+const DEFAULT_QUOTE_CURRENCY = "USD";
+const EPSILON = 0.00000001;
 export class orderBook {
     bits = [];
     asks = [];
     base_asset;
-    quote_asset = BASE_CURRENCY;
+    quote_asset = DEFAULT_QUOTE_CURRENCY;
     currentPrice;
     lastTradeId;
-    constructor(bids, asks, base_assert, currentPrice, lastTradeId) {
+    constructor(bids, asks, base_assert, quote_assert = DEFAULT_QUOTE_CURRENCY, currentPrice = 0, lastTradeId = 0) {
         this.bits = bids || [];
         this.asks = asks || [];
         this.base_asset = base_assert;
+        this.quote_asset = quote_assert || DEFAULT_QUOTE_CURRENCY;
         this.currentPrice = currentPrice || 0;
         this.lastTradeId = lastTradeId || 0;
     }
     getSnapshot() {
         return {
             baseAsset: this.base_asset,
+            quoteAsset: this.quote_asset,
             bids: this.bits,
             asks: this.asks,
             lastTradeId: this.lastTradeId,
             currentPrice: this.currentPrice
         };
     }
-    addOrder(order) {
+    addOrder(order, shouldPost = true) {
         if (order.side === "BUY") {
             const { fills, executedQuantity } = this.matchBids(order);
-            order.filled += executedQuantity;
-            if (executedQuantity === order.quantity) {
+            if (order.quantity - order.filled <= EPSILON) {
                 return { fills, executedQuantity };
             }
-            this.bits.push(order);
+            if (shouldPost) {
+                this.bits.push(order);
+            }
             return { fills, executedQuantity };
         }
         else {
             const { fills, exicutedQuantity } = this.matchAsks(order);
-            order.filled += exicutedQuantity;
-            if (exicutedQuantity === order.quantity) {
+            if (order.quantity - order.filled <= EPSILON) {
                 return { fills, executedQuantity: exicutedQuantity };
             }
-            this.asks.push(order);
+            if (shouldPost) {
+                this.asks.push(order);
+            }
             return { fills, executedQuantity: exicutedQuantity };
         }
     }
@@ -62,6 +67,7 @@ export class orderBook {
             order.filled += tradeQty;
             ask.filled += tradeQty;
             exicutedQuantity += tradeQty;
+            this.currentPrice = ask.price;
             fills.push({
                 price: ask.price,
                 quantity: tradeQty,
@@ -69,7 +75,7 @@ export class orderBook {
                 otherUserId: ask.userId,
                 markerOrderId: ask.orderId
             });
-            if (ask.filled === ask.quantity) {
+            if (ask.quantity - ask.filled <= EPSILON) {
                 this.asks.splice(i, 1);
                 i--;
             }
@@ -96,6 +102,7 @@ export class orderBook {
             order.filled += tradeQty;
             bid.filled += tradeQty;
             exicutedQty += tradeQty;
+            this.currentPrice = bid.price;
             fills.push({
                 price: bid.price,
                 quantity: tradeQty,
@@ -103,7 +110,7 @@ export class orderBook {
                 otherUserId: bid.userId,
                 markerOrderId: bid.orderId
             });
-            if (bid.filled === bid.quantity) {
+            if (bid.quantity - bid.filled <= EPSILON) {
                 this.bits.splice(i, 1);
                 i--;
             }
@@ -111,25 +118,40 @@ export class orderBook {
         return { fills, exicutedQuantity: exicutedQty };
     }
     getDepth() {
-        const bids = this.bits.slice(0, 10)
-            .map(bid => [bid.price.toString(), (bid.quantity - bid.filled).toString()]);
-        const asks = this.asks.slice(0, 10)
-            .map(ask => [ask.price.toString(), (ask.quantity - ask.filled).toString()]);
         const bidsObj = {};
         const asksObj = {};
         for (const b of this.bits) {
-            bidsObj[b.price] = (bidsObj[b.price] || 0) + b.quantity;
+            const remaining = Math.max(0, b.quantity - b.filled);
+            if (remaining > EPSILON) {
+                bidsObj[b.price] = (bidsObj[b.price] || 0) + remaining;
+            }
         }
         for (const a of this.asks) {
-            asksObj[a.price] = (asksObj[a.price] || 0) + a.quantity;
+            const remaining = Math.max(0, a.quantity - a.filled);
+            if (remaining > EPSILON) {
+                asksObj[a.price] = (asksObj[a.price] || 0) + remaining;
+            }
         }
-        for (const price in bidsObj) {
-            bids.push([price, (bidsObj[price] ?? 0).toString()]);
-        }
-        for (const price in asksObj) {
-            asks.push([price, (asksObj[price] ?? 0).toString()]);
-        }
+        const bids = Object.entries(bidsObj)
+            .sort(([a], [b]) => Number(b) - Number(a))
+            .slice(0, 10)
+            .map(([price, quantity]) => [price, quantity.toString()]);
+        const asks = Object.entries(asksObj)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .slice(0, 10)
+            .map(([price, quantity]) => [price, quantity.toString()]);
         return { bids, asks };
+    }
+    cancelOrder(orderId) {
+        const bidIndex = this.bits.findIndex(bit => bit.orderId === orderId);
+        if (bidIndex !== -1) {
+            return this.bits.splice(bidIndex, 1)[0];
+        }
+        const askIndex = this.asks.findIndex(ask => ask.orderId === orderId);
+        if (askIndex !== -1) {
+            return this.asks.splice(askIndex, 1)[0];
+        }
+        return undefined;
     }
     getOpenOrders(userId) {
         const bids = this.bits.filter(bit => bit.userId === userId);

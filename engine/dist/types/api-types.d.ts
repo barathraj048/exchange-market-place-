@@ -15,6 +15,7 @@ export type MessageFromApi = {
         quantity: string;
         side: "BUY" | "SELL";
         market: string;
+        orderType?: "LIMIT" | "MARKET";
     };
 } | {
     type: typeof CANCEL_ORDER;
@@ -28,7 +29,7 @@ export type MessageFromApi = {
         amount: string;
         txnId: string;
         userId: string;
-        assert: string;
+        asset?: string;
     };
 } | {
     type: typeof OFF_RAMP;

@@ -2,6 +2,23 @@
   "orderBook": [
     {
       "baseAsset": "TATA",
+      "quoteAsset": "USD",
+      "bids": [],
+      "asks": [],
+      "lastTradeId": 0,
+      "currentPrice": 0
+    },
+    {
+      "baseAsset": "TATA",
+      "quoteAsset": "INR",
+      "bids": [],
+      "asks": [],
+      "lastTradeId": 0,
+      "currentPrice": 0
+    },
+    {
+      "baseAsset": "SOL",
+      "quoteAsset": "USDC",
       "bids": [],
       "asks": [],
       "lastTradeId": 0,
@@ -16,7 +33,19 @@
           "available": 10000000,
           "locked": 0
         },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
           "available": 10000000,
           "locked": 0
         }
@@ -29,7 +58,19 @@
           "available": 10000000,
           "locked": 0
         },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
           "available": 10000000,
           "locked": 0
         }
@@ -42,7 +83,19 @@
           "available": 10000000,
           "locked": 0
         },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
           "available": 10000000,
           "locked": 0
         }

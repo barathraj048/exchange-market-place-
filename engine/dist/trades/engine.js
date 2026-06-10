@@ -2,6 +2,7 @@
 import fs from "fs";
 import { CANCEL_ORDER as CancelOrder, CREATE_ORDER as CreateOrder, GET_DEPTH as getDepth, GET_OPEN_ORDERS as getOpenOrders, GET_BALANCE as GetBalance, ON_RAMP as onRamp, OFF_RAMP as offRamp, } from "../types/api-types.js";
 export const BASE_CURRENCY = "USD";
+const EPSILON = 0.00000001;
 import { orderBook } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
 import { ADD_TRADE, ORDER_UPDATE } from "../types/index.js";
@@ -15,19 +16,19 @@ export class Engine {
             if (process.env.WITH_SNAPSHOT && fs.existsSync(this.snapshotPath)) {
                 const raw = fs.readFileSync(this.snapshotPath, "utf-8");
                 const snapObj = JSON.parse(raw);
-                this.orderBook = (snapObj.orderBook || []).map((o) => new orderBook(o.bids || o.bits || [], o.asks || [], o.base_asset || o.baseAsset || "TATA", o.currentPrice || 0, o.lastTradeId || 0));
+                this.orderBook = (snapObj.orderBook || []).map((o) => new orderBook(o.bids || o.bits || [], o.asks || [], o.base_asset || o.baseAsset || "TATA", o.quote_asset || o.quoteAsset || BASE_CURRENCY, o.currentPrice || 0, o.lastTradeId || 0));
                 this.balances = this.normalizeBalances(new Map(snapObj.balance || []));
                 console.log("Loaded snapshot:", this.snapshotPath);
             }
             else {
                 // default starting state
-                this.orderBook = [new orderBook([], [], "TATA", 0, 0)];
+                this.orderBook = this.getDefaultOrderBooks();
                 this.setBaseBalances();
             }
         }
         catch (e) {
             console.error("Failed to load snapshot, starting fresh:", e);
-            this.orderBook = [new orderBook([], [], "TATA", 0, 0)];
+            this.orderBook = this.getDefaultOrderBooks();
             this.setBaseBalances();
         }
         // periodic snapshot save (synchronous write to keep things simple)
@@ -43,11 +44,51 @@ export class Engine {
     normalizeBalances(rawBalances) {
         rawBalances.forEach((wallet) => {
             if (!wallet[BASE_CURRENCY] && wallet.INR) {
-                wallet[BASE_CURRENCY] = wallet.INR;
-                delete wallet.INR;
+                wallet[BASE_CURRENCY] = { ...wallet.INR };
             }
         });
         return rawBalances;
+    }
+    getDefaultOrderBooks() {
+        return [
+            new orderBook([], [], "TATA", BASE_CURRENCY),
+            new orderBook([], [], "TATA", "INR"),
+            new orderBook([], [], "SOL", "USDC"),
+        ];
+    }
+    parseMarket(market) {
+        const [base_asset, quote_asset] = market.split("_");
+        if (!base_asset || !quote_asset) {
+            throw new Error("Invalid market format");
+        }
+        return { base_asset, quote_asset };
+    }
+    getOrderBook(base_asset, quote_asset) {
+        return this.orderBook.find((o) => o.base_asset === base_asset && o.quote_asset === quote_asset);
+    }
+    getOrCreateOrderBook(base_asset, quote_asset) {
+        let book = this.getOrderBook(base_asset, quote_asset);
+        if (!book) {
+            book = new orderBook([], [], base_asset, quote_asset);
+            this.orderBook.push(book);
+        }
+        return book;
+    }
+    getOrCreateBalance(userId) {
+        let balance = this.balances.get(userId);
+        if (!balance) {
+            balance = {};
+            this.balances.set(userId, balance);
+        }
+        return balance;
+    }
+    ensureAssetBalance(balance, asset) {
+        let assetBalance = balance[asset];
+        if (!assetBalance) {
+            assetBalance = { available: 0, locked: 0 };
+            balance[asset] = assetBalance;
+        }
+        return assetBalance;
     }
     saveSnapshot() {
         const snapShortObj = {
@@ -70,7 +111,8 @@ export class Engine {
                     const price = Number(message.data.price);
                     const side = message.data.side;
                     const market = message.data.market;
-                    const { executedQty, fills, orderId } = this.createOrder(quantity, price, side, market, message.data.userId);
+                    const orderType = message.data.orderType || "LIMIT";
+                    const { executedQty, fills, orderId } = this.createOrder(quantity, price, side, market, message.data.userId, orderType);
                     // publish order placed
                     redisManager.publishToApi(ClientId, {
                         type: "ORDER_PLACED",
@@ -84,7 +126,7 @@ export class Engine {
                 catch (e) {
                     console.error(`Error processing order for user ${ClientId}:`, e);
                     redisManager.publishToApi(ClientId, {
-                        type: "ORDER_CANCELED",
+                        type: "ORDER_REJECTED",
                         payload: {
                             orderId: "",
                             executedQuantity: 0,
@@ -99,17 +141,11 @@ export class Engine {
                 try {
                     const orderId = message.data.orderId;
                     const market = message.data.market;
-                    const base_asset = market.split("_")[0];
-                    const quote_asset = market.split("_")[1];
-                    if (!base_asset || !quote_asset) {
-                        throw new Error("Invalid market format");
-                    }
-                    const cancelOrderBook = this.orderBook.find((o) => o.base_asset === base_asset);
+                    const { base_asset, quote_asset } = this.parseMarket(market);
+                    const cancelOrderBook = this.getOrderBook(base_asset, quote_asset);
                     if (!cancelOrderBook)
                         throw new Error("Order book not found");
-                    // find in asks or bids
-                    const foundOrder = cancelOrderBook.asks.find((o) => o.orderId === orderId) ||
-                        cancelOrderBook.bits.find((o) => o.orderId === orderId);
+                    const foundOrder = cancelOrderBook.cancelOrder(orderId);
                     if (!foundOrder)
                         throw new Error("Order not found");
                     // compute remaining value/quantity and release locked funds accordingly
@@ -117,44 +153,45 @@ export class Engine {
                     if (foundOrder.side === "BUY") {
                         // BUY had quote locked (price * remainingQty)
                         const release = remainingQty * foundOrder.price;
-                        const userBal = this.balances.get(foundOrder.userId);
-                        if (userBal && userBal[quote_asset]) {
-                            userBal[quote_asset].locked = Math.max(0, userBal[quote_asset].locked - release);
-                            userBal[quote_asset].available =
-                                (userBal[quote_asset].available || 0) + release;
-                        }
-                        // publish depth update for that price level
-                        this.updateDepth(market, orderId, foundOrder.price);
+                        const userBal = this.getOrCreateBalance(foundOrder.userId);
+                        const quoteBalance = this.ensureAssetBalance(userBal, quote_asset);
+                        quoteBalance.locked = Math.max(0, quoteBalance.locked - release);
+                        quoteBalance.available += release;
                     }
                     else {
                         // SELL had base locked (remainingQty)
                         const release = remainingQty;
-                        const userBal = this.balances.get(foundOrder.userId);
-                        if (userBal && userBal[base_asset]) {
-                            userBal[base_asset].locked = Math.max(0, userBal[base_asset].locked - release);
-                            userBal[base_asset].available =
-                                (userBal[base_asset].available || 0) + release;
-                        }
-                        this.updateDepth(market, orderId, foundOrder.price);
+                        const userBal = this.getOrCreateBalance(foundOrder.userId);
+                        const baseBalance = this.ensureAssetBalance(userBal, base_asset);
+                        baseBalance.locked = Math.max(0, baseBalance.locked - release);
+                        baseBalance.available += release;
                     }
+                    this.updateDepth(market, orderId, foundOrder.price);
                     redisManager.publishToApi(ClientId, {
                         type: "ORDER_CANCELLED",
                         payload: {
                             orderId,
-                            executedQty: 0,
-                            remainingQty: 0,
+                            executedQty: foundOrder.filled || 0,
+                            remainingQty,
                         },
                     });
                 }
                 catch (e) {
                     console.error(`Error cancelling order for user ${ClientId}:`, e);
+                    redisManager.publishToApi(ClientId, {
+                        type: "ORDER_CANCEL_REJECTED",
+                        payload: {
+                            orderId: message.data.orderId,
+                            error: e.message || "Cancel failed",
+                        },
+                    });
                 }
                 break;
             }
             case getOpenOrders: {
                 try {
-                    const [base, quote] = message.data.market.split("_");
-                    const book = this.orderBook.find((o) => o.base_asset === base && o.quote_asset === quote);
+                    const { base_asset, quote_asset } = this.parseMarket(message.data.market);
+                    const book = this.getOrderBook(base_asset, quote_asset);
                     const openOrders = book?.getOpenOrders(message.data.userId) || [];
                     redisManager.publishToApi(ClientId, {
                         type: "OPEN_ORDERS",
@@ -163,6 +200,11 @@ export class Engine {
                 }
                 catch (e) {
                     console.error(`Error fetching open orders for user ${ClientId}:`, e);
+                    redisManager.publishToApi(ClientId, {
+                        type: "OPEN_ORDERS",
+                        payload: [],
+                        error: e.message || "Failed to fetch open orders",
+                    });
                 }
                 break;
             }
@@ -170,7 +212,7 @@ export class Engine {
                 try {
                     const amount = Number(message.data.amount);
                     const userId = message.data.userId;
-                    const asset = message.data.assert || BASE_CURRENCY;
+                    const asset = message.data.asset || BASE_CURRENCY;
                     this.onRamp(userId, amount, asset);
                     // Send confirmation back to API
                     redisManager.publishToApi(ClientId, {
@@ -178,7 +220,7 @@ export class Engine {
                         payload: {
                             txnId: message.data.txnId,
                             amount,
-                            currency: BASE_CURRENCY,
+                            currency: asset,
                             balance: this.getBalances(userId),
                         },
                     });
@@ -223,8 +265,8 @@ export class Engine {
             }
             case getDepth: {
                 try {
-                    const [base, quote] = message.data.market.split("_");
-                    const book = this.orderBook.find((o) => o.base_asset == base && o.quote_asset == quote);
+                    const { base_asset, quote_asset } = this.parseMarket(message.data.market);
+                    const book = this.getOrderBook(base_asset, quote_asset);
                     const payload = book?.getDepth() || { bids: [], asks: [] };
                     redisManager.publishToApi(ClientId, {
                         type: "GET_DEPTH",
@@ -268,38 +310,43 @@ export class Engine {
         }
     }
     onRamp(ClientId, amount, asset) {
-        const balance = this.balances.get(ClientId);
-        if (!balance) {
-            this.balances.set(ClientId, {
-                [asset]: { available: amount, locked: 0 },
-            });
+        if (!asset) {
+            throw new Error("Asset is required");
         }
-        else {
-            balance[asset] = balance[asset] || { available: 0, locked: 0 };
-            balance[asset].available += amount;
+        if (!Number.isFinite(amount) || amount <= 0) {
+            throw new Error("Amount must be greater than 0");
         }
+        const balance = this.getOrCreateBalance(ClientId);
+        const assetBalance = this.ensureAssetBalance(balance, asset);
+        assetBalance.available += amount;
     }
     offRamp(ClientId, amount, asset) {
+        if (!asset) {
+            throw new Error("Asset is required");
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+            throw new Error("Amount must be greater than 0");
+        }
         const balance = this.balances.get(ClientId);
         if (!balance) {
             throw new Error("User balance not found");
         }
-        if (!balance[asset]) {
+        const assetBalance = balance[asset];
+        if (!assetBalance) {
             throw new Error(`Asset ${asset} not found in user balance`);
         }
-        if (balance[asset].available < amount) {
+        if (assetBalance.available < amount) {
             throw new Error(`Insufficient ${asset} balance`);
         }
-        balance[asset].available -= amount;
+        assetBalance.available -= amount;
     }
     // Accepts market (either base or full "BASE_QUOTE"), orderId, price
     updateDepth(market, orderId, price) {
-        // market might be "BASE" or "BASE_QUOTE"
-        const base = market.includes("_") ? market.split("_")[0] : market;
-        const orderBook = this.orderBook.find((o) => o.base_asset === base);
+        const { base_asset, quote_asset } = this.parseMarket(market);
+        const orderBook = this.getOrderBook(base_asset, quote_asset);
         if (!orderBook)
             return;
-        const fullMarket = `${orderBook.base_asset}_${orderBook.quote_asset || BASE_CURRENCY}`;
+        const fullMarket = `${orderBook.base_asset}_${orderBook.quote_asset}`;
         const depth = orderBook.getDepth();
         const updatedBids = depth.bids.filter((b) => b[0] === price.toString());
         const updatedAsks = depth.asks.filter((a) => a[0] === price.toString());
@@ -312,21 +359,73 @@ export class Engine {
             },
         });
     }
-    createOrder(quantity, price, side, market, ClientId) {
-        const base_asset = market.split("_")[0];
-        const quote_asset = market.split("_")[1];
-        if (!base_asset || !quote_asset) {
-            throw new Error("Invalid market format");
+    estimateMarketBuyCost(orderBook, quantity) {
+        let remaining = quantity;
+        let totalCost = 0;
+        const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
+        for (const ask of asks) {
+            if (remaining <= EPSILON)
+                break;
+            const askRemaining = Math.max(0, ask.quantity - ask.filled);
+            if (askRemaining <= EPSILON)
+                continue;
+            const fillQuantity = Math.min(remaining, askRemaining);
+            totalCost += fillQuantity * ask.price;
+            remaining -= fillQuantity;
         }
-        const orderBook = this.orderBook.find((o) => o.base_asset === base_asset && o.quote_asset === quote_asset);
-        if (!orderBook) {
-            throw new Error(`Order book not found for market: ${market}`);
+        if (remaining > EPSILON) {
+            throw new Error("Insufficient liquidity");
+        }
+        return totalCost;
+    }
+    assertMarketSellLiquidity(orderBook, quantity) {
+        let remaining = quantity;
+        const bids = [...orderBook.bits].sort((a, b) => b.price - a.price);
+        for (const bid of bids) {
+            if (remaining <= EPSILON)
+                return;
+            const bidRemaining = Math.max(0, bid.quantity - bid.filled);
+            if (bidRemaining <= EPSILON)
+                continue;
+            remaining -= Math.min(remaining, bidRemaining);
+        }
+        if (remaining > EPSILON) {
+            throw new Error("Insufficient liquidity");
+        }
+    }
+    createOrder(quantity, price, side, market, ClientId, orderType = "LIMIT") {
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error("Quantity must be greater than 0");
+        }
+        if (side !== "BUY" && side !== "SELL") {
+            throw new Error("Invalid order side");
+        }
+        if (orderType !== "LIMIT" && orderType !== "MARKET") {
+            throw new Error("Invalid order type");
+        }
+        if (orderType === "LIMIT" && (!Number.isFinite(price) || price <= 0)) {
+            throw new Error("Price must be greater than 0");
+        }
+        const { base_asset, quote_asset } = this.parseMarket(market);
+        const orderBook = this.getOrCreateOrderBook(base_asset, quote_asset);
+        let matchingPrice = price;
+        let quoteAmountToLock = price * quantity;
+        if (orderType === "MARKET") {
+            if (side === "BUY") {
+                quoteAmountToLock = this.estimateMarketBuyCost(orderBook, quantity);
+                matchingPrice = Number.MAX_SAFE_INTEGER;
+            }
+            else {
+                this.assertMarketSellLiquidity(orderBook, quantity);
+                quoteAmountToLock = 0;
+                matchingPrice = 0;
+            }
         }
         // check and lock funds (throws if insufficient)
-        this.checkAndLock(quantity, price, side, base_asset, quote_asset, ClientId);
+        this.checkAndLock(quantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId);
         const order = {
             quortAssert: quote_asset,
-            price,
+            price: matchingPrice,
             quantity,
             side,
             userId: ClientId,
@@ -334,14 +433,14 @@ export class Engine {
             orderId: Math.random().toString(36).substring(2, 15) +
                 Math.random().toString(36).substring(2, 15),
         };
-        const { fills, executedQuantity } = orderBook.addOrder(order);
+        const { fills, executedQuantity } = orderBook.addOrder(order, orderType === "LIMIT");
         // update balances as per fills
-        this.updateBalances(ClientId, executedQuantity, fills, base_asset, quote_asset, side);
+        this.updateBalances(ClientId, fills, base_asset, quote_asset, side, price, orderType);
         // persist and publish
         this.createDbTrade(fills, market, side);
-        this.createDbOrder(order, fills, executedQuantity, market);
+        this.createDbOrder(order, fills, executedQuantity, market, orderType);
         this.publishWsTrades(fills, market, side);
-        this.publishWsDepth(side, market, price, fills);
+        this.publishWsDepth(side, market, matchingPrice, fills);
         return { executedQty: executedQuantity, fills, orderId: order.orderId };
     }
     publishWsDepth(side, market, price, fills) {
@@ -350,8 +449,11 @@ export class Engine {
         if (!orderBook)
             return;
         const depth = orderBook.getDepth();
+        const filledPrices = [...new Set(fills.map((f) => f.price.toString()))];
         if (side === "BUY") {
-            const updatedAsks = depth.asks.filter((a) => fills.map((f) => f.price.toString()).includes(a[0]));
+            const updatedAsks = filledPrices.map((filledPrice) => {
+                return depth.asks.find((a) => a[0] === filledPrice) || [filledPrice, "0"];
+            });
             const updatedBid = depth.bids.find((b) => b[0] === price.toString());
             redisManager.publishTrade(`depth@${market}`, {
                 stream: `depth@${market}`,
@@ -364,7 +466,9 @@ export class Engine {
         }
         else {
             const updatedAsk = depth.asks.find((a) => a[0] === price.toString());
-            const updatedBids = depth.bids.filter((b) => fills.map((f) => f.price.toString()).includes(b[0]));
+            const updatedBids = filledPrices.map((filledPrice) => {
+                return depth.bids.find((b) => b[0] === filledPrice) || [filledPrice, "0"];
+            });
             redisManager.publishTrade(`depth@${market}`, {
                 stream: `depth@${market}`,
                 data: {
@@ -390,17 +494,18 @@ export class Engine {
             });
         });
     }
-    createDbOrder(order, fills, executedQuantity, market) {
+    createDbOrder(order, fills, executedQuantity, market, orderType) {
         // main order update
         redisManager.pushToDb({
             type: ORDER_UPDATE,
             data: {
                 orderId: order.orderId,
                 executedQuantity: executedQuantity,
-                price: order.price,
+                price: orderType === "MARKET" ? 0 : order.price,
                 quantity: order.quantity,
                 market,
-                side: order.side,
+                side: order.side.toLowerCase(),
+                orderType,
             },
         });
         // update maker orders (those that were partially/fully filled)
@@ -421,72 +526,66 @@ export class Engine {
                 data: {
                     id: String(fill.tradeId),
                     price: fill.price,
-                    quantity: fill.quantity,
-                    timeStramp: Date.now(),
-                    isBuyerMaker: side == "SELL" ? true : false,
+                    qty: fill.quantity,
+                    timestamp: Date.now(),
+                    buyerMarket: side == "SELL" ? true : false,
                     quoteQuantity: (fill.price * fill.quantity).toString(),
                     market,
                 },
             });
         });
     }
-    updateBalances(ClientId, executedQuantity, fills, base_asset, quote_asset, side) {
-        const userBalance = this.balances.get(ClientId);
-        if (!userBalance)
-            return;
-        // ensure keys exist
-        userBalance[base_asset] = userBalance[base_asset] || {
-            available: 0,
-            locked: 0,
-        };
-        userBalance[quote_asset] = userBalance[quote_asset] || {
-            available: 0,
-            locked: 0,
-        };
+    updateBalances(ClientId, fills, base_asset, quote_asset, side, orderPrice, orderType) {
+        const takerBalance = this.getOrCreateBalance(ClientId);
+        const takerBase = this.ensureAssetBalance(takerBalance, base_asset);
+        const takerQuote = this.ensureAssetBalance(takerBalance, quote_asset);
         if (side === "BUY") {
             fills.forEach((fill) => {
-                // buyer receives base asset quantity, and quote locked decreases by price*qty
-                const baseBalance = userBalance[base_asset];
-                const quoteBalance = userBalance[quote_asset];
-                if (baseBalance)
-                    baseBalance.available += fill.quantity;
-                if (quoteBalance)
-                    quoteBalance.locked = Math.max(0, quoteBalance.locked - fill.quantity * fill.price);
+                const makerBalance = this.getOrCreateBalance(fill.otherUserId);
+                const makerBase = this.ensureAssetBalance(makerBalance, base_asset);
+                const makerQuote = this.ensureAssetBalance(makerBalance, quote_asset);
+                const tradeValue = fill.quantity * fill.price;
+                const reservedForFill = orderType === "MARKET" ? tradeValue : fill.quantity * orderPrice;
+                takerBase.available += fill.quantity;
+                takerQuote.locked = Math.max(0, takerQuote.locked - reservedForFill);
+                takerQuote.available += Math.max(0, reservedForFill - tradeValue);
+                makerBase.locked = Math.max(0, makerBase.locked - fill.quantity);
+                makerQuote.available += tradeValue;
             });
         }
         else {
             fills.forEach((fill) => {
-                // seller had base locked and now base locked reduces; quote available increases
-                const baseBalance = userBalance[base_asset];
-                const quoteBalance = userBalance[quote_asset];
-                if (baseBalance)
-                    baseBalance.locked = Math.max(0, baseBalance.locked - fill.quantity);
-                if (quoteBalance)
-                    quoteBalance.available += fill.quantity * fill.price;
+                const makerBalance = this.getOrCreateBalance(fill.otherUserId);
+                const makerBase = this.ensureAssetBalance(makerBalance, base_asset);
+                const makerQuote = this.ensureAssetBalance(makerBalance, quote_asset);
+                const tradeValue = fill.quantity * fill.price;
+                takerBase.locked = Math.max(0, takerBase.locked - fill.quantity);
+                takerQuote.available += tradeValue;
+                makerBase.available += fill.quantity;
+                makerQuote.locked = Math.max(0, makerQuote.locked - tradeValue);
             });
         }
     }
-    checkAndLock(quantity, price, side, base_asset, quote_asset, ClientId) {
+    checkAndLock(quantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId) {
         // ensure user exists
         const userBal = this.balances.get(ClientId);
         if (!userBal)
             throw new Error("User balance not found");
-        userBal[base_asset] = userBal[base_asset] || { available: 0, locked: 0 };
-        userBal[quote_asset] = userBal[quote_asset] || { available: 0, locked: 0 };
+        const baseBalance = this.ensureAssetBalance(userBal, base_asset);
+        const quoteBalance = this.ensureAssetBalance(userBal, quote_asset);
         if (side === "BUY") {
-            const cost = price * quantity;
-            if ((userBal[quote_asset].available || 0) < cost) {
+            if (quoteBalance.available < quoteAmountToLock) {
                 throw new Error("Insufficient balance");
             }
-            userBal[quote_asset].available -= cost;
-            userBal[quote_asset].locked += cost;
+            quoteBalance.available -= quoteAmountToLock;
+            quoteBalance.locked += quoteAmountToLock;
         }
         else {
-            if ((userBal[base_asset].available || 0) < quantity) {
+            if (baseBalance.available < quantity) {
                 throw new Error("Insufficient balance");
             }
-            userBal[base_asset].available -= quantity;
-            userBal[base_asset].locked += quantity;
+            baseBalance.available -= quantity;
+            baseBalance.locked += quantity;
         }
     }
     setBaseBalances() {
@@ -495,7 +594,10 @@ export class Engine {
         seed.forEach((id) => {
             this.balances.set(id, {
                 [BASE_CURRENCY]: { available: 10_000_000, locked: 0 },
+                INR: { available: 10_000_000, locked: 0 },
+                USDC: { available: 10_000_000, locked: 0 },
                 TATA: { available: 10_000_000, locked: 0 },
+                SOL: { available: 10_000_000, locked: 0 },
             });
         });
     }

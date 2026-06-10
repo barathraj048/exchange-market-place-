@@ -19,7 +19,7 @@ async function sendToEngine(message: any, timeoutMs: number = 5000): Promise<any
 // POST /api/v1/transaction - Create order
 transactionRoute.post("/", async (req, res) => {
   try {
-    const { userId, market, side, type, price, quantity } = req.body;
+    const { userId, market, side, type = "limit", price, quantity } = req.body;
 
     if (!userId || !market || !side || !quantity) {
       return res.status(400).json({
@@ -32,6 +32,13 @@ transactionRoute.post("/", async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Side must be 'buy' or 'sell'",
+      });
+    }
+
+    if (type !== "limit" && type !== "market") {
+      return res.status(400).json({
+        success: false,
+        message: "Type must be 'limit' or 'market'",
       });
     }
 
@@ -49,21 +56,28 @@ transactionRoute.post("/", async (req, res) => {
       });
     }
 
-    let orderPrice = price;
-    if (type === "market") {
-      orderPrice = side === "buy" ? "999999" : "0.01";
-    }
+    const orderType = type === "market" ? "MARKET" : "LIMIT";
+    const orderPrice = type === "market" ? "0" : String(price);
 
     const response = await sendToEngine({
       type: CREATE_ORDER,
       data: {
         userId,
-        price: String(orderPrice),
+        price: orderPrice,
         quantity: String(quantity),
         side: side.toUpperCase(),
         market,
+        orderType,
       },
     });
+
+    if (response.type === "ORDER_REJECTED") {
+      return res.status(400).json({
+        success: false,
+        message: response.payload?.error || "Order rejected",
+        data: response,
+      });
+    }
 
     res.json({
       success: true,
@@ -92,7 +106,7 @@ transactionRoute.post("/deposit", async (req, res) => {
 
     const txnId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await sendToEngine({
+    const response = await sendToEngine({
       type: ON_RAMP,
       data: {
         userId,
@@ -102,11 +116,20 @@ transactionRoute.post("/deposit", async (req, res) => {
       },
     });
 
+    if (response.type === "DEPOSIT_FAILED") {
+      return res.status(400).json({
+        success: false,
+        message: response.payload?.error || "Deposit failed",
+      });
+    }
+
     res.json({
       success: true,
       data: {
         txnId,
         amount: Number(amount),
+        asset: response.payload?.currency || asset,
+        balance: response.payload?.balance,
         message: "Deposit successful",
       },
     });
@@ -148,7 +171,7 @@ transactionRoute.post("/withdraw", async (req, res) => {
 
     const txnId = `withdraw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await sendToEngine({
+    const response = await sendToEngine({
       type: OFF_RAMP,
       data: {
         userId,
@@ -158,12 +181,20 @@ transactionRoute.post("/withdraw", async (req, res) => {
       },
     });
 
+    if (response.type === "WITHDRAW_FAILED") {
+      return res.status(400).json({
+        success: false,
+        message: response.payload?.error || "Withdrawal failed",
+      });
+    }
+
     res.json({
       success: true,
       data: {
         txnId,
         amount: Number(amount),
         asset,
+        balance: response.payload?.balance,
         message: "Withdrawal successful",
       },
     });

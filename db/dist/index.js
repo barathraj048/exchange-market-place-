@@ -26,17 +26,25 @@ async function main() {
             await pgClient.query(`INSERT INTO trades (market, price, qty, volume, ts, trade_id)
                  VALUES ($1, $2, $3, $4, $5, $6)`, [data.data.market, price, qty, volume, ts, data.data.id]);
         }
-        else if (data.type === "ADD_ORDER") {
-            console.log("DB: storing order");
-            await pgClient.query(`INSERT INTO orders (market, side, price, qty, order_id, executed_qty)
-                 VALUES ($1, $2, $3, $4, $5, $6)`, [
-                data.data.market,
-                data.data.side,
-                Number(data.data.price),
-                Number(data.data.quantity),
-                data.data.orderId,
-                Number(data.data.executedQuantity)
-            ]);
+        else if (data.type === "ORDER_UPDATE") {
+            if (data.data.market && data.data.side && data.data.price !== undefined && data.data.quantity !== undefined) {
+                console.log("DB: storing order");
+                await pgClient.query(`INSERT INTO orders (market, side, price, qty, order_id, executed_qty)
+                     VALUES ($1, $2, $3, $4, $5, $6)`, [
+                    data.data.market,
+                    data.data.side,
+                    Number(data.data.price),
+                    Number(data.data.quantity),
+                    data.data.orderId,
+                    Number(data.data.executedQuantity)
+                ]);
+            }
+            else {
+                console.log("DB: updating order execution");
+                await pgClient.query(`UPDATE orders
+                     SET executed_qty = COALESCE(executed_qty, 0) + $2
+                     WHERE order_id = $1`, [data.data.orderId, Number(data.data.executedQuantity)]);
+            }
         }
     }
 }

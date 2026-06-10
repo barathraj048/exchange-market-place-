@@ -1,12 +1,13 @@
-import { CANCEL_ORDER, CREATE_ORDER, GET_DEPTH, GET_OPEN_ORDERS, ON_RAMP } from "./index.js";
+import { CANCEL_ORDER, CREATE_ORDER, GET_BALANCE, GET_DEPTH, GET_OPEN_ORDERS, OFF_RAMP, ON_RAMP } from "./index.js";
 export type MessageToEngine = {
     type: typeof CREATE_ORDER;
     data: {
         market: string;
         price: string;
         quantity: string;
-        side: "buy" | "sell";
+        side: "BUY" | "SELL";
         userId: string;
+        orderType?: "LIMIT" | "MARKET";
     };
 } | {
     type: typeof CANCEL_ORDER;
@@ -20,6 +21,15 @@ export type MessageToEngine = {
         amount: string;
         userId: string;
         txnId: string;
+        asset?: string;
+    };
+} | {
+    type: typeof OFF_RAMP;
+    data: {
+        amount: string;
+        userId: string;
+        txnId: string;
+        asset: string;
     };
 } | {
     type: typeof GET_DEPTH;
@@ -31,6 +41,11 @@ export type MessageToEngine = {
     data: {
         userId: string;
         market: string;
+    };
+} | {
+    type: typeof GET_BALANCE;
+    data: {
+        userId: string;
     };
 };
 //# sourceMappingURL=to.d.ts.map

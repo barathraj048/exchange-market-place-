@@ -2,8 +2,8 @@ export type MessageFromEngine =
   {
       type: "ADD_TRADE";
       data: {
-        price: string;
-        qty: string;
+        price: number;
+        qty: number;
         market: string;
         timestamp: number;
         buyerMarket: boolean;
@@ -12,13 +12,14 @@ export type MessageFromEngine =
       };
     }
   | {
-      type: "ADD_ORDER";
+      type: "ORDER_UPDATE";
       data: {
-        price: string;
-        quantity: string;
-        market: string;
-        side: "buy" | "sell";
         orderId: string;
-        executedQuantity: string;
+        executedQuantity: number;
+        price?: number;
+        quantity?: number;
+        market?: string;
+        side?: "buy" | "sell";
+        orderType?: "LIMIT" | "MARKET";
       };
     };
