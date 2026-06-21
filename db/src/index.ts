@@ -2,13 +2,13 @@ import { Client } from 'pg';
 import { createClient } from 'redis';
 import { MessageFromEngine } from './type';
 
-const pgClient = new Client({
-  user: 'your_user',
-  host: '127.0.0.1',
-  database: 'my_database',
-  password: 'your_password',
-  port: 5432,
-});
+    const pgClient = new Client({
+    user: 'your_user',
+    host: '127.0.0.1',
+    database: 'my_database',
+    password: 'your_password',
+    port: 5432,
+    });
 pgClient.connect();
 
 async function main() {
@@ -17,9 +17,13 @@ async function main() {
     console.log("connected to redis");
 
     while (true) {
-        const response = await redisClient.rPop("db_process"); 
-        if (!response) continue;
+        const response = await redisClient.rPop("db_process");
+        if (!response) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+        }
 
+        console.log("RAW:", response);
         const data: MessageFromEngine = JSON.parse(response);
 
         if (data.type === "ADD_TRADE") {

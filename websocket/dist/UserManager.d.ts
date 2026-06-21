@@ -6,7 +6,7 @@ export declare class UserManager {
     static getInstance(): UserManager;
     constructor();
     addUser(ws: WebSocket): User;
-    onLeave(ws: WebSocket, id: string): void;
+    private registerListeners;
     getUser(id: string): User;
     private idGenerator;
 }

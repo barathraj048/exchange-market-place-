@@ -17,13 +17,36 @@ export class UserManager {
         let id = this.idGenerator();
         let user = new User(ws, id);
         this.User.set(id, user);
-        this.onLeave(ws, id);
+        this.registerListeners(ws, id);
         return user;
     }
-    onLeave(ws, id) {
+    registerListeners(ws, id) {
+        ws.on("message", (raw) => {
+            let message;
+            try {
+                message = JSON.parse(raw.toString());
+            }
+            catch {
+                return;
+            }
+            const user = this.getUser(id);
+            if (!user)
+                return;
+            switch (message.type) {
+                case "AUTH":
+                    user.edmit({ type: "AUTH_SUCCESS" });
+                    break;
+                case "SUBSCRIBE":
+                    SubscriptionManager.getInstance().subscribeChannel(id, message.channel);
+                    break;
+                case "UNSUBSCRIBE":
+                    SubscriptionManager.getInstance().unsubscribeChannel(id, message.channel);
+                    break;
+            }
+        });
         ws.on("close", () => {
             this.User.delete(id);
-            SubscriptionManager.getInstance().leaveUser(id);
+            SubscriptionManager.getInstance().userLeft(id);
         });
     }
     getUser(id) {

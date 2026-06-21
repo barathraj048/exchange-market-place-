@@ -14,8 +14,11 @@ async function main() {
     console.log("connected to redis");
     while (true) {
         const response = await redisClient.rPop("db_process");
-        if (!response)
+        if (!response) {
+            await new Promise(r => setTimeout(r, 1000));
             continue;
+        }
+        console.log("RAW:", response);
         const data = JSON.parse(response);
         if (data.type === "ADD_TRADE") {
             console.log("DB: storing trade");
