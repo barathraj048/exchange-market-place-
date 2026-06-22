@@ -13,6 +13,7 @@ import {
 
 export const BASE_CURRENCY = "USD";
 const EPSILON = 0.00000001;
+const MARKET_SLIPPAGE_BUFFER = 0.001;
 
 import { orderBook, type order, type fills } from "./orderBook.js";
 import { redisManager } from "../RedisManager.js";
@@ -151,46 +152,45 @@ export class Engine {
   // main router for incoming API messages
   process({ message, ClientId }: { message: MessageFromApi; ClientId: string }) {
     switch (message.type) {
-      case CreateOrder: {
-        try {
-          const quantity = Number(message.data.quantity);
-          const price = Number(message.data.price);
-          const side = message.data.side as "BUY" | "SELL";
-          const market = message.data.market as string;
-          const orderType = message.data.orderType || "LIMIT";
+  case CreateOrder: {
+    try {
+      const quantity = Number(message.data.quantity);
+      const price = Number(message.data.price);
+      const side = message.data.side as "BUY" | "SELL";
+      const market = message.data.market as string;
+      const orderType = (message.data.orderType || "LIMIT") as "LIMIT" | "MARKET";
 
-          const { executedQty, fills, orderId } = this.createOrder(
-            quantity,
-            price,
-            side,
-            market,
-            message.data.userId,
-            orderType
-          );
+      const { executedQty, fills, orderId } = this.createOrder(
+        quantity,
+        price,
+        side,
+        market,
+        message.data.userId,
+        orderType
+      );
 
-          // publish order placed
-          redisManager.publishToApi(ClientId, {
-            type: "ORDER_PLACED",
-            payload: {
-              orderId,
-              executedQty,
-              fills,
-            },
-          });
-        } catch (e: any) {
-          console.error(`Error processing order for user ${ClientId}:`, e);
-          redisManager.publishToApi(ClientId, {
-            type: "ORDER_REJECTED",
-            payload: {
-              orderId: "",
-              executedQuantity: 0,
-              remainingQuantity: 0,
-              error: e.message,
-            },
-          });
-        }
-        break;
-      }
+      redisManager.publishToApi(ClientId, {
+        type: "ORDER_PLACED",
+        payload: {
+          orderId,
+          executedQty,
+          fills,
+        },
+      });
+    } catch (e: any) {
+      console.error(`Error processing order for user ${ClientId}:`, e);
+      redisManager.publishToApi(ClientId, {
+        type: "ORDER_REJECTED",
+        payload: {
+          orderId: "",
+          executedQuantity: 0,
+          remainingQuantity: 0,
+          error: e.message,
+        },
+      });
+    }
+    break;
+  }
 
       case CancelOrder: {
         try {
@@ -374,19 +374,19 @@ export class Engine {
     }
   }
 
-onRamp(ClientId: string, amount: number, asset: string) {
-  if (!asset) {
-    throw new Error("Asset is required");
-  }
+  onRamp(ClientId: string, amount: number, asset: string) {
+    if (!asset) {
+      throw new Error("Asset is required");
+    }
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("Amount must be greater than 0");
-  }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Amount must be greater than 0");
+    }
 
-  const balance = this.getOrCreateBalance(ClientId);
-  const assetBalance = this.ensureAssetBalance(balance, asset);
-  assetBalance.available += amount;
-}
+    const balance = this.getOrCreateBalance(ClientId);
+    const assetBalance = this.ensureAssetBalance(balance, asset);
+    assetBalance.available += amount;
+  }
 
   offRamp(ClientId: string, amount: number, asset: string) {
     if (!asset) {
@@ -475,6 +475,30 @@ onRamp(ClientId: string, amount: number, asset: string) {
       throw new Error("Insufficient liquidity");
     }
   }
+  private estimateMarketBuyQuantityForBudget(orderBook: orderBook, quoteBudget: number): number {
+  let remainingBudget = quoteBudget;
+  let totalQuantity = 0;
+  const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
+
+  for (const ask of asks) {
+    if (remainingBudget <= EPSILON) break;
+
+    const askRemaining = Math.max(0, ask.quantity - ask.filled);
+    if (askRemaining <= EPSILON) continue;
+
+    const maxAffordableQty = remainingBudget / ask.price;
+    const fillQuantity = Math.min(maxAffordableQty, askRemaining);
+
+    totalQuantity += fillQuantity;
+    remainingBudget -= fillQuantity * ask.price;
+  }
+
+  if (totalQuantity <= EPSILON) {
+    throw new Error("Insufficient liquidity for the given amount");
+  }
+
+  return totalQuantity;
+}
 
   createOrder(
     quantity: number,
@@ -482,12 +506,9 @@ onRamp(ClientId: string, amount: number, asset: string) {
     side: "BUY" | "SELL",
     market: string,
     ClientId: string,
-    orderType: "LIMIT" | "MARKET" = "LIMIT"
+    orderType: "LIMIT" | "MARKET" = "LIMIT",
+    quoteAmount?: number 
   ) {
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      throw new Error("Quantity must be greater than 0");
-    }
-
     if (side !== "BUY" && side !== "SELL") {
       throw new Error("Invalid order side");
     }
@@ -499,17 +520,47 @@ onRamp(ClientId: string, amount: number, asset: string) {
     if (orderType === "LIMIT" && (!Number.isFinite(price) || price <= 0)) {
       throw new Error("Price must be greater than 0");
     }
+    const isQuoteAmountBuy =
+      orderType === "MARKET" &&
+      side === "BUY" &&
+      (!Number.isFinite(quantity) || quantity <= 0);
+
+    if (isQuoteAmountBuy) {
+      if (!Number.isFinite(quoteAmount) || (quoteAmount as number) <= 0) {
+        throw new Error("Quantity or quoteAmount must be greater than 0");
+      }
+    } else if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error("Quantity must be greater than 0");
+    }
 
     const { base_asset, quote_asset } = this.parseMarket(market);
     const orderBook = this.getOrCreateOrderBook(base_asset, quote_asset);
     let matchingPrice = price;
     let quoteAmountToLock = price * quantity;
+    let resolvedQuantity = quantity;
 
     if (orderType === "MARKET") {
       if (side === "BUY") {
-        quoteAmountToLock = this.estimateMarketBuyCost(orderBook, quantity);
+        if (isQuoteAmountBuy) {
+          // work out how much base asset the stated spend amount actually
+          // buys against the current book
+          resolvedQuantity = this.estimateMarketBuyQuantityForBudget(
+            orderBook,
+            quoteAmount as number
+          );
+          // lock exactly the stated budget — the existing MARKET reconciliation
+          // in updateBalances refunds whatever portion doesn't get spent
+          quoteAmountToLock = quoteAmount as number;
+        } else {
+          const estimatedCost = this.estimateMarketBuyCost(orderBook, quantity);
+          // pad the lock so a price move between this estimate and the match
+          // below can never leave the order under-funded
+          quoteAmountToLock = estimatedCost * (1 + MARKET_SLIPPAGE_BUFFER);
+        }
         matchingPrice = Number.MAX_SAFE_INTEGER;
       } else {
+        // selling locks the exact base quantity below — no price estimate
+        // involved on this side, so no buffer is needed
         this.assertMarketSellLiquidity(orderBook, quantity);
         quoteAmountToLock = 0;
         matchingPrice = 0;
@@ -517,12 +568,12 @@ onRamp(ClientId: string, amount: number, asset: string) {
     }
 
     // check and lock funds (throws if insufficient)
-    this.checkAndLock(quantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId);
+    this.checkAndLock(resolvedQuantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId);
 
     const order: order = {
       quortAssert: quote_asset,
       price: matchingPrice,
-      quantity,
+      quantity: resolvedQuantity,
       side,
       userId: ClientId,
       filled: 0,
@@ -533,7 +584,6 @@ onRamp(ClientId: string, amount: number, asset: string) {
 
     const { fills, executedQuantity } = orderBook.addOrder(order, orderType === "LIMIT");
 
-    // update balances as per fills
     this.updateBalances(
       ClientId,
       fills,
@@ -541,10 +591,11 @@ onRamp(ClientId: string, amount: number, asset: string) {
       quote_asset,
       side,
       price,
-      orderType
+      orderType,
+      quoteAmountToLock,
+      resolvedQuantity
     );
 
-    // persist and publish
     this.createDbTrade(fills, market, side);
     this.createDbOrder(order, fills, executedQuantity, market, orderType);
     this.publishWsTrades(fills, market, side);
@@ -552,7 +603,7 @@ onRamp(ClientId: string, amount: number, asset: string) {
 
     return { executedQty: executedQuantity, fills, orderId: order.orderId };
   }
-
+  
   publishWsDepth(
     side: "BUY" | "SELL",
     market: string,
@@ -663,48 +714,81 @@ onRamp(ClientId: string, amount: number, asset: string) {
     });
   }
 
-  updateBalances(
+updateBalances(
     ClientId: string,
     fills: fills[],
     base_asset: string,
     quote_asset: string,
     side: "BUY" | "SELL",
     orderPrice: number,
-    orderType: "LIMIT" | "MARKET"
+    orderType: "LIMIT" | "MARKET",
+    lockedAmount: number = 0,
+    requestedQuantity: number = 0
   ) {
     const takerBalance = this.getOrCreateBalance(ClientId);
     const takerBase = this.ensureAssetBalance(takerBalance, base_asset);
     const takerQuote = this.ensureAssetBalance(takerBalance, quote_asset);
 
     if (side === "BUY") {
+      let actualCost = 0;
+
       fills.forEach((fill) => {
         const makerBalance = this.getOrCreateBalance(fill.otherUserId);
         const makerBase = this.ensureAssetBalance(makerBalance, base_asset);
         const makerQuote = this.ensureAssetBalance(makerBalance, quote_asset);
         const tradeValue = fill.quantity * fill.price;
-        const reservedForFill =
-          orderType === "MARKET" ? tradeValue : fill.quantity * orderPrice;
+        actualCost += tradeValue;
 
         takerBase.available += fill.quantity;
-        takerQuote.locked = Math.max(0, takerQuote.locked - reservedForFill);
-        takerQuote.available += Math.max(0, reservedForFill - tradeValue);
-
         makerBase.locked = Math.max(0, makerBase.locked - fill.quantity);
         makerQuote.available += tradeValue;
+
+        if (orderType === "LIMIT") {
+          // release exactly what this fill reserved at the limit price,
+          // refunding any favorable-price difference immediately
+          const reservedForFill = fill.quantity * orderPrice;
+          takerQuote.locked = Math.max(0, takerQuote.locked - reservedForFill);
+          takerQuote.available += Math.max(0, reservedForFill - tradeValue);
+        }
       });
+
+      if (orderType === "MARKET") {
+        // one reconciliation for the whole order: unlock everything reserved
+        // (estimate + slippage buffer) and refund whatever wasn't spent.
+        // Also covers a partial fill — any unfilled remainder's reservation
+        // is released here too, so nothing is ever left stranded in `locked`.
+        takerQuote.locked = Math.max(0, takerQuote.locked - lockedAmount);
+        takerQuote.available += Math.max(0, lockedAmount - actualCost);
+      }
     } else {
+      let actualFilled = 0;
+
       fills.forEach((fill) => {
         const makerBalance = this.getOrCreateBalance(fill.otherUserId);
         const makerBase = this.ensureAssetBalance(makerBalance, base_asset);
         const makerQuote = this.ensureAssetBalance(makerBalance, quote_asset);
         const tradeValue = fill.quantity * fill.price;
 
-        takerBase.locked = Math.max(0, takerBase.locked - fill.quantity);
         takerQuote.available += tradeValue;
-
         makerBase.available += fill.quantity;
         makerQuote.locked = Math.max(0, makerQuote.locked - tradeValue);
+        actualFilled += fill.quantity;
+
+        if (orderType === "LIMIT") {
+          takerBase.locked = Math.max(0, takerBase.locked - fill.quantity);
+        }
       });
+
+      if (orderType === "MARKET") {
+        // release the full locked base quantity in one shot; whatever didn't
+        // fill (liquidity mismatch at execution time) goes straight back to
+        // available instead of staying stuck in locked forever
+        takerBase.locked = Math.max(0, takerBase.locked - requestedQuantity);
+        const unfilled = Math.max(0, requestedQuantity - actualFilled);
+        if (unfilled > EPSILON) {
+          takerBase.available += unfilled;
+        }
+      }
     }
   }
 
@@ -724,7 +808,7 @@ onRamp(ClientId: string, amount: number, asset: string) {
     const quoteBalance = this.ensureAssetBalance(userBal, quote_asset);
 
     if (side === "BUY") {
-      if (quoteBalance.available < quoteAmountToLock) {
+      if (quoteBalance.available + EPSILON < quoteAmountToLock) {
         throw new Error("Insufficient balance");
       }
       quoteBalance.available -= quoteAmountToLock;

@@ -15,10 +15,10 @@ async function sendToEngine(message, timeoutMs = 5000) {
 transactionRoute.post("/", async (req, res) => {
     try {
         const { userId, market, side, type = "limit", price, quantity } = req.body;
-        if (!userId || !market || !side || !quantity) {
+        if (!userId || !market || !side || !price || Number(price) <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Missing required fields: userId, market, side, quantity",
+                message: "Missing or invalid required fields: userId, market, side, price",
             });
         }
         if (side !== "buy" && side !== "sell") {
@@ -33,30 +33,24 @@ transactionRoute.post("/", async (req, res) => {
                 message: "Type must be 'limit' or 'market'",
             });
         }
-        if (type === "limit" && (!price || Number(price) <= 0)) {
+        if (type === "limit" && (!quantity || Number(quantity) <= 0)) {
             return res.status(400).json({
                 success: false,
-                message: "Price is required for limit orders",
-            });
-        }
-        if (Number(quantity) <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Quantity must be greater than 0",
+                message: "Quantity is required and must be greater than 0 for limit orders",
             });
         }
         const orderType = type === "market" ? "MARKET" : "LIMIT";
-        const orderPrice = type === "market" ? "0" : String(price);
+        const enginePayload = {
+            userId,
+            market,
+            side: side.toUpperCase(),
+            orderType,
+            quantity: quantity ? String(quantity) : "0",
+            price: String(price),
+        };
         const response = await sendToEngine({
             type: CREATE_ORDER,
-            data: {
-                userId,
-                price: orderPrice,
-                quantity: String(quantity),
-                side: side.toUpperCase(),
-                market,
-                orderType,
-            },
+            data: enginePayload,
         });
         if (response.type === "ORDER_REJECTED") {
             return res.status(400).json({

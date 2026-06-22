@@ -29,7 +29,8 @@ export declare class Engine {
     updateDepth(market: string, orderId: string, price: number): void;
     private estimateMarketBuyCost;
     private assertMarketSellLiquidity;
-    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string, orderType?: "LIMIT" | "MARKET"): {
+    private estimateMarketBuyQuantityForBudget;
+    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string, orderType?: "LIMIT" | "MARKET", quoteAmount?: number): {
         executedQty: number;
         fills: fills[];
         orderId: string;
@@ -38,7 +39,7 @@ export declare class Engine {
     publishWsTrades(fills: fills[], market: string, side: "BUY" | "SELL"): void;
     createDbOrder(order: order, fills: fills[], executedQuantity: number, market: string, orderType: "LIMIT" | "MARKET"): void;
     createDbTrade(fills: fills[], market: string, side: "BUY" | "SELL"): void;
-    updateBalances(ClientId: string, fills: fills[], base_asset: string, quote_asset: string, side: "BUY" | "SELL", orderPrice: number, orderType: "LIMIT" | "MARKET"): void;
+    updateBalances(ClientId: string, fills: fills[], base_asset: string, quote_asset: string, side: "BUY" | "SELL", orderPrice: number, orderType: "LIMIT" | "MARKET", lockedAmount?: number, requestedQuantity?: number): void;
     checkAndLock(quantity: number, quoteAmountToLock: number, side: "BUY" | "SELL", base_asset: string, quote_asset: string, ClientId: string): void;
     setBaseBalances(): void;
     getBalances(ClientId: string): UserBalance;

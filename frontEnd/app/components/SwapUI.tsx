@@ -133,8 +133,8 @@ export function SwapUI({ market }: { market: string }) {
   };
 
   const sendTransaction = async (side: "buy" | "sell") => {
-    if (quantity <= 0) return alert("Quantity required");
     if (type === "limit" && price <= 0) return alert("Price required");
+    if (type === "limit" && !quantity) return alert("quantity required");
 
     setLoading(true);
 
@@ -143,8 +143,8 @@ export function SwapUI({ market }: { market: string }) {
       market,
       side,
       type,
-      price: type === "limit" ? price : undefined,
-      quantity,
+      price ,
+      quantity :type === "limit" ? quantity : undefined,
     };
 
     try {
@@ -337,9 +337,8 @@ export function SwapUI({ market }: { market: string }) {
                   step="0.01"
                   placeholder="0.00"
                   type="number"
-                  disabled={type === "market"}
                   className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-14 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors"
-                  value={type === "market" ? "" : price || ""}
+                  value={price || "" }
                   onChange={(e) => setPrice(Number(e.target.value))}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
@@ -356,8 +355,9 @@ export function SwapUI({ market }: { market: string }) {
                   step="0.01"
                   placeholder="0.00"
                   type="number"
+                  disabled={type === "market"}
                   className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-14 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] transition-colors"
-                  value={quantity || ""}
+                  value={type === "market"?"":quantity || ""}
                   onChange={(e) => setQuantity(Number(e.target.value))}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">

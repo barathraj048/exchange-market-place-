@@ -19,71 +19,66 @@ async function sendToEngine(message: any, timeoutMs: number = 5000): Promise<any
 // POST /api/v1/transaction - Create order
 transactionRoute.post("/", async (req, res) => {
   try {
-    const { userId, market, side, type = "limit", price, quantity } = req.body;
+      const { userId, market, side, type = "limit", price, quantity } = req.body;
 
-    if (!userId || !market || !side || !quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields: userId, market, side, quantity",
-      });
-    }
+      if (!userId || !market || !side || !price || Number(price) <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing or invalid required fields: userId, market, side, price",
+        });
+      }
 
-    if (side !== "buy" && side !== "sell") {
-      return res.status(400).json({
-        success: false,
-        message: "Side must be 'buy' or 'sell'",
-      });
-    }
+      if (side !== "buy" && side !== "sell") {
+        return res.status(400).json({
+          success: false,
+          message: "Side must be 'buy' or 'sell'",
+        });
+      }
 
-    if (type !== "limit" && type !== "market") {
-      return res.status(400).json({
-        success: false,
-        message: "Type must be 'limit' or 'market'",
-      });
-    }
+      if (type !== "limit" && type !== "market") {
+        return res.status(400).json({
+          success: false,
+          message: "Type must be 'limit' or 'market'",
+        });
+      }
 
-    if (type === "limit" && (!price || Number(price) <= 0)) {
-      return res.status(400).json({
-        success: false,
-        message: "Price is required for limit orders",
-      });
-    }
+      if (type === "limit" && (!quantity || Number(quantity) <= 0)) {
+        return res.status(400).json({
+          success: false,
+          message: "Quantity is required and must be greater than 0 for limit orders",
+        });
+      }
 
-    if (Number(quantity) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Quantity must be greater than 0",
-      });
-    }
-
-    const orderType = type === "market" ? "MARKET" : "LIMIT";
-    const orderPrice = type === "market" ? "0" : String(price);
-
-    const response = await sendToEngine({
-      type: CREATE_ORDER,
-      data: {
+      const orderType = type === "market" ? "MARKET" : "LIMIT";
+      
+      const enginePayload = {
         userId,
-        price: orderPrice,
-        quantity: String(quantity),
-        side: side.toUpperCase(),
         market,
+        side: side.toUpperCase(),
         orderType,
-      },
-    });
+        quantity: quantity ? String(quantity) : "0",
+        price: String(price),
+      };
 
-    if (response.type === "ORDER_REJECTED") {
-      return res.status(400).json({
-        success: false,
-        message: response.payload?.error || "Order rejected",
+      const response = await sendToEngine({
+        type: CREATE_ORDER,
+        data: enginePayload,
+      });
+
+      if (response.type === "ORDER_REJECTED") {
+        return res.status(400).json({
+          success: false,
+          message: response.payload?.error || "Order rejected",
+          data: response,
+        });
+      }
+
+      res.json({
+        success: true,
         data: response,
       });
-    }
 
-    res.json({
-      success: true,
-      data: response,
-    });
-  } catch (error: any) {
+    }catch (error: any) {
     console.error("Transaction error:", error);
     res.status(500).json({
       success: false,
