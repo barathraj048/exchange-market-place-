@@ -21,10 +21,11 @@ transactionRoute.post("/", async (req, res) => {
   try {
       const { userId, market, side, type = "limit", price, quantity } = req.body;
 
-      if (!userId || !market || !side || !price || Number(price) <= 0) {
+      // 1. Validate Base Fields required for ALL orders
+      if (!userId || !market || !side) {
         return res.status(400).json({
           success: false,
-          message: "Missing or invalid required fields: userId, market, side, price",
+          message: "Missing required fields: userId, market, side",
         });
       }
 
@@ -42,11 +43,31 @@ transactionRoute.post("/", async (req, res) => {
         });
       }
 
-      if (type === "limit" && (!quantity || Number(quantity) <= 0)) {
-        return res.status(400).json({
-          success: false,
-          message: "Quantity is required and must be greater than 0 for limit orders",
-        });
+      if (type === "limit") {
+        if (!price || Number(price) <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Price is required and must be > 0 for limit orders",
+          });
+        }
+        if (!quantity || Number(quantity) <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Quantity is required and must be > 0 for limit orders",
+          });
+        }
+      }
+
+      if (type === "market") {
+        const hasQuantity = quantity && Number(quantity) > 0;
+        const hasBudget = price && Number(price) > 0; // Using price field as quoteAmount budget
+        
+        if (!hasQuantity && !hasBudget) {
+           return res.status(400).json({
+            success: false,
+            message: "Market orders require either a quantity or a budget amount",
+          });
+        }
       }
 
       const orderType = type === "market" ? "MARKET" : "LIMIT";
@@ -57,7 +78,7 @@ transactionRoute.post("/", async (req, res) => {
         side: side.toUpperCase(),
         orderType,
         quantity: quantity ? String(quantity) : "0",
-        price: String(price),
+        price: price ? String(price) : "0", // Default to "0" if market order didn't send a price
       };
 
       const response = await sendToEngine({
@@ -78,7 +99,7 @@ transactionRoute.post("/", async (req, res) => {
         data: response,
       });
 
-    }catch (error: any) {
+    } catch (error: any) {
     console.error("Transaction error:", error);
     res.status(500).json({
       success: false,

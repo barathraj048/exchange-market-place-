@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+const SUPPORTED_MARKETS = new Set(["BTC_USDC", "ETH_USDC", "SOL_USDC", "BNB_USDC", "XRP_USDC"]);
+
 export async function GET() {
   const uri = "https://api.backpack.exchange/api/v1/markets";
 
@@ -8,7 +10,6 @@ export async function GET() {
       headers: {
         "Content-Type": "application/json",
       },
-      // Avoid Next.js caching issues (optional)
       cache: "no-store",
     });
 
@@ -17,7 +18,13 @@ export async function GET() {
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
+    
+    // Maintain identical scheme but truncate arrays to supported premium pairs
+    const filteredMarkets = data.filter((market: any) => 
+      SUPPORTED_MARKETS.has(market.symbol)
+    );
+
+    return NextResponse.json(filteredMarkets);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

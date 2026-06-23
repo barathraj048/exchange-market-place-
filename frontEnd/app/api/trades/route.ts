@@ -12,7 +12,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const uri = `https://api.backpack.exchange/api/v1/trades?symbol=${symbol}&limit=${limit}`;
+  // Pointing to YOUR local Express engine instead of Backpack!
+  const uri = `http://localhost:3001/api/v1/trades?market=${symbol}&limit=${limit}`;
 
   try {
     const res = await fetch(uri, {

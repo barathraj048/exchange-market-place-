@@ -362,6 +362,7 @@ export class Engine {
     estimateMarketBuyCost(orderBook, quantity) {
         let remaining = quantity;
         let totalCost = 0;
+        let worstPrice = 0;
         const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
         for (const ask of asks) {
             if (remaining <= EPSILON)
@@ -372,30 +373,36 @@ export class Engine {
             const fillQuantity = Math.min(remaining, askRemaining);
             totalCost += fillQuantity * ask.price;
             remaining -= fillQuantity;
+            worstPrice = ask.price; // Track the highest ask we need to hit
         }
         if (remaining > EPSILON) {
             throw new Error("Insufficient liquidity");
         }
-        return totalCost;
+        return { totalCost, worstPrice };
     }
     assertMarketSellLiquidity(orderBook, quantity) {
         let remaining = quantity;
-        const bids = [...orderBook.bits].sort((a, b) => b.price - a.price);
+        let worstPrice = 0;
+        const bids = [...orderBook.bits].sort((a, b) => b.price - a.price); // Kept your .bits typo to avoid breaking your types
         for (const bid of bids) {
             if (remaining <= EPSILON)
-                return;
+                break;
             const bidRemaining = Math.max(0, bid.quantity - bid.filled);
             if (bidRemaining <= EPSILON)
                 continue;
-            remaining -= Math.min(remaining, bidRemaining);
+            const fillQuantity = Math.min(remaining, bidRemaining);
+            remaining -= fillQuantity;
+            worstPrice = bid.price; // Track the lowest bid we need to hit
         }
         if (remaining > EPSILON) {
             throw new Error("Insufficient liquidity");
         }
+        return { worstPrice };
     }
     estimateMarketBuyQuantityForBudget(orderBook, quoteBudget) {
         let remainingBudget = quoteBudget;
         let totalQuantity = 0;
+        let worstPrice = 0;
         const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
         for (const ask of asks) {
             if (remainingBudget <= EPSILON)
@@ -407,13 +414,16 @@ export class Engine {
             const fillQuantity = Math.min(maxAffordableQty, askRemaining);
             totalQuantity += fillQuantity;
             remainingBudget -= fillQuantity * ask.price;
+            worstPrice = ask.price; // Track the highest ask we need to hit
         }
         if (totalQuantity <= EPSILON) {
             throw new Error("Insufficient liquidity for the given amount");
         }
-        return totalQuantity;
+        return { totalQuantity, worstPrice };
     }
-    createOrder(quantity, price, side, market, ClientId, orderType = "LIMIT", quoteAmount) {
+    // 2. The Unified createOrder Method
+    createOrder(quantity, price, side, market, ClientId, orderType, quoteAmount) {
+        quoteAmount = price;
         if (side !== "BUY" && side !== "SELL") {
             throw new Error("Invalid order side");
         }
@@ -423,59 +433,54 @@ export class Engine {
         if (orderType === "LIMIT" && (!Number.isFinite(price) || price <= 0)) {
             throw new Error("Price must be greater than 0");
         }
-        // applies to BOTH order types now — a BUY with no usable quantity but a
-        // quoteAmount means "spend this much", whether it's filled at a limit
-        // price or walked against the book at market
         const isQuoteAmountBuy = side === "BUY" && (!Number.isFinite(quantity) || quantity <= 0);
-        // if (isQuoteAmountBuy) {
-        //   if (!Number.isFinite(quoteAmount) || (quoteAmount as number) <= 0) {
-        //     throw new Error("Quantity or quoteAmount must be greater than 0");
-        //   }
-        // } else if (!Number.isFinite(quantity) || quantity <= 0) {
-        //   throw new Error("Quantity must be greater than 0");
-        // }
+        if (isQuoteAmountBuy) {
+            if (!Number.isFinite(quoteAmount) || quoteAmount <= 0) {
+                throw new Error("Quantity or quoteAmount must be greater than 0");
+            }
+        }
+        else if (!Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error("Quantity must be greater than 0");
+        }
         const { base_asset, quote_asset } = this.parseMarket(market);
         const orderBook = this.getOrCreateOrderBook(base_asset, quote_asset);
         let matchingPrice = price;
-        let quoteAmountToLock = price * quantity;
         let resolvedQuantity = quantity;
-        if (orderType === "LIMIT" && isQuoteAmountBuy) {
-            // price is fixed by the limit itself, so converting spend -> quantity
-            // is a plain division — no book-walking needed like the MARKET case
-            resolvedQuantity = quoteAmount / price;
-            if (!Number.isFinite(resolvedQuantity) || resolvedQuantity <= EPSILON) {
-                throw new Error("quoteAmount too small at this price");
-            }
-            // lock the exact spend the user asked for, rather than re-multiplying
-            // resolvedQuantity * price (which can drift from quoteAmount due to
-            // float rounding in the division above)
-            quoteAmountToLock = quoteAmount;
-        }
+        let quoteAmountToLock = 0;
+        // --- THE MAGIC: CONVERT MARKET TO LIMIT ---
         if (orderType === "MARKET") {
             if (side === "BUY") {
                 if (isQuoteAmountBuy) {
-                    // work out how much base asset the stated spend amount actually
-                    // buys against the current book
-                    resolvedQuantity = this.estimateMarketBuyQuantityForBudget(orderBook, quoteAmount);
-                    // lock exactly the stated budget — the existing MARKET reconciliation
-                    // in updateBalances refunds whatever portion doesn't get spent
-                    quoteAmountToLock = quoteAmount;
+                    const { worstPrice } = this.estimateMarketBuyQuantityForBudget(orderBook, quoteAmount);
+                    // 2. Set our limit price with the buffer
+                    matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
+                    // 3. Since we raised the price slightly, recalculate the exact quantity they can buy with their budget
+                    resolvedQuantity = quoteAmount / matchingPrice;
                 }
                 else {
-                    const estimatedCost = this.estimateMarketBuyCost(orderBook, quantity);
-                    // pad the lock so a price move between this estimate and the match
-                    // below can never leave the order under-funded
-                    quoteAmountToLock = estimatedCost * (1 + MARKET_SLIPPAGE_BUFFER);
+                    // Normal Market buy with strict quantity
+                    const { worstPrice } = this.estimateMarketBuyCost(orderBook, quantity);
+                    matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
                 }
-                matchingPrice = Number.MAX_SAFE_INTEGER;
             }
             else {
-                // selling locks the exact base quantity below — no price estimate
-                // involved on this side, so no buffer is needed
-                this.assertMarketSellLiquidity(orderBook, quantity);
-                quoteAmountToLock = 0;
-                matchingPrice = 0;
+                // MARKET SELL
+                const { worstPrice } = this.assertMarketSellLiquidity(orderBook, quantity);
+                matchingPrice = worstPrice * (1 - MARKET_SLIPPAGE_BUFFER);
+                // Safety check to ensure extreme slippage doesn't push price below 0
+                matchingPrice = Math.max(0, matchingPrice);
             }
+            // Bam. We now have a precise price and quantity. Treat as a LIMIT order moving forward.
+            orderType = "LIMIT";
+        }
+        // Now strictly handle as LIMIT
+        if (side === "BUY") {
+            // If they provided a strict quote budget, lock exactly that amount to avoid JS floating-point dust. 
+            // Otherwise, lock standard Price * Quantity.
+            quoteAmountToLock = isQuoteAmountBuy ? quoteAmount : (matchingPrice * resolvedQuantity);
+        }
+        else {
+            quoteAmountToLock = 0; // Sells lock the base asset via resolvedQuantity in checkAndLock
         }
         // check and lock funds (throws if insufficient)
         this.checkAndLock(resolvedQuantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId);
@@ -489,8 +494,10 @@ export class Engine {
             orderId: Math.random().toString(36).substring(2, 15) +
                 Math.random().toString(36).substring(2, 15),
         };
-        const { fills, executedQuantity } = orderBook.addOrder(order, orderType === "LIMIT");
-        this.updateBalances(ClientId, fills, base_asset, quote_asset, side, price, orderType, quoteAmountToLock, resolvedQuantity);
+        // Passed true for the isLimit boolean since we explicitly forced orderType to "LIMIT"
+        const { fills, executedQuantity } = orderBook.addOrder(order, true);
+        this.updateBalances(ClientId, fills, base_asset, quote_asset, side, matchingPrice, // Passed matchingPrice so the system knows the actual execution bounds
+        orderType, quoteAmountToLock, resolvedQuantity);
         this.createDbTrade(fills, market, side);
         this.createDbOrder(order, fills, executedQuantity, market, orderType);
         this.publishWsTrades(fills, market, side);
@@ -680,6 +687,7 @@ export class Engine {
                 USDC: { available: 10_000_000, locked: 0 },
                 TATA: { available: 10_000_000, locked: 0 },
                 SOL: { available: 10_000_000, locked: 0 },
+                ETH: { available: 10_000_000, locked: 0 },
             });
         });
     }

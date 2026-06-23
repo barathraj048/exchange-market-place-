@@ -30,7 +30,7 @@ export declare class Engine {
     private estimateMarketBuyCost;
     private assertMarketSellLiquidity;
     private estimateMarketBuyQuantityForBudget;
-    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string, orderType?: "LIMIT" | "MARKET", quoteAmount?: number): {
+    createOrder(quantity: number, price: number, side: "BUY" | "SELL", market: string, ClientId: string, orderType: "LIMIT" | "MARKET", quoteAmount?: number): {
         executedQty: number;
         fills: fills[];
         orderId: string;

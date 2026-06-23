@@ -48,6 +48,10 @@
         "SOL": {
           "available": 10000000,
           "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
         }
       }
     ],
@@ -73,6 +77,10 @@
         "SOL": {
           "available": 10000000,
           "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
         }
       }
     ],
@@ -96,6 +104,10 @@
           "locked": 0
         },
         "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
           "available": 10000000,
           "locked": 0
         }

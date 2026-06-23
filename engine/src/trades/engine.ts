@@ -166,7 +166,7 @@ export class Engine {
         side,
         market,
         message.data.userId,
-        orderType
+        orderType,
       );
 
       redisManager.publishToApi(ClientId, {
@@ -438,6 +438,7 @@ export class Engine {
   private estimateMarketBuyCost(orderBook: orderBook, quantity: number) {
     let remaining = quantity;
     let totalCost = 0;
+    let worstPrice = 0;
     const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
 
     for (const ask of asks) {
@@ -449,66 +450,77 @@ export class Engine {
       const fillQuantity = Math.min(remaining, askRemaining);
       totalCost += fillQuantity * ask.price;
       remaining -= fillQuantity;
+      worstPrice = ask.price; // Track the highest ask we need to hit
     }
 
     if (remaining > EPSILON) {
       throw new Error("Insufficient liquidity");
     }
 
-    return totalCost;
+    return { totalCost, worstPrice };
   }
 
   private assertMarketSellLiquidity(orderBook: orderBook, quantity: number) {
     let remaining = quantity;
-    const bids = [...orderBook.bits].sort((a, b) => b.price - a.price);
+    let worstPrice = 0;
+    const bids = [...orderBook.bits].sort((a, b) => b.price - a.price); // Kept your .bits typo to avoid breaking your types
 
     for (const bid of bids) {
-      if (remaining <= EPSILON) return;
+      if (remaining <= EPSILON) break;
 
       const bidRemaining = Math.max(0, bid.quantity - bid.filled);
       if (bidRemaining <= EPSILON) continue;
 
-      remaining -= Math.min(remaining, bidRemaining);
+      const fillQuantity = Math.min(remaining, bidRemaining);
+      remaining -= fillQuantity;
+      worstPrice = bid.price; // Track the lowest bid we need to hit
     }
 
     if (remaining > EPSILON) {
       throw new Error("Insufficient liquidity");
     }
-  }
-  private estimateMarketBuyQuantityForBudget(orderBook: orderBook, quoteBudget: number): number {
-  let remainingBudget = quoteBudget;
-  let totalQuantity = 0;
-  const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
-
-  for (const ask of asks) {
-    if (remainingBudget <= EPSILON) break;
-
-    const askRemaining = Math.max(0, ask.quantity - ask.filled);
-    if (askRemaining <= EPSILON) continue;
-
-    const maxAffordableQty = remainingBudget / ask.price;
-    const fillQuantity = Math.min(maxAffordableQty, askRemaining);
-
-    totalQuantity += fillQuantity;
-    remainingBudget -= fillQuantity * ask.price;
+    
+    return { worstPrice };
   }
 
-  if (totalQuantity <= EPSILON) {
-    throw new Error("Insufficient liquidity for the given amount");
+  private estimateMarketBuyQuantityForBudget(orderBook: orderBook, quoteBudget: number) {
+    let remainingBudget = quoteBudget;
+    let totalQuantity = 0;
+    let worstPrice = 0;
+    const asks = [...orderBook.asks].sort((a, b) => a.price - b.price);
+
+    for (const ask of asks) {
+      if (remainingBudget <= EPSILON) break;
+
+      const askRemaining = Math.max(0, ask.quantity - ask.filled);
+      if (askRemaining <= EPSILON) continue;
+
+      const maxAffordableQty = remainingBudget / ask.price;
+      const fillQuantity = Math.min(maxAffordableQty, askRemaining);
+
+      totalQuantity += fillQuantity;
+      remainingBudget -= fillQuantity * ask.price;
+      worstPrice = ask.price; // Track the highest ask we need to hit
+    }
+
+    if (totalQuantity <= EPSILON) {
+      throw new Error("Insufficient liquidity for the given amount");
+    }
+
+    return { totalQuantity, worstPrice };
   }
 
-  return totalQuantity;
-}
-
+  // 2. The Unified createOrder Method
   createOrder(
     quantity: number,
     price: number,
     side: "BUY" | "SELL",
     market: string,
     ClientId: string,
-    orderType: "LIMIT" | "MARKET" = "LIMIT",
+    orderType: "LIMIT" | "MARKET" ,
     quoteAmount?: number 
   ) {
+    quoteAmount=price
     if (side !== "BUY" && side !== "SELL") {
       throw new Error("Invalid order side");
     }
@@ -520,10 +532,8 @@ export class Engine {
     if (orderType === "LIMIT" && (!Number.isFinite(price) || price <= 0)) {
       throw new Error("Price must be greater than 0");
     }
-    const isQuoteAmountBuy =
-      orderType === "MARKET" &&
-      side === "BUY" &&
-      (!Number.isFinite(quantity) || quantity <= 0);
+    
+    const isQuoteAmountBuy = side === "BUY" && (!Number.isFinite(quantity) || quantity <= 0);
 
     if (isQuoteAmountBuy) {
       if (!Number.isFinite(quoteAmount) || (quoteAmount as number) <= 0) {
@@ -535,36 +545,46 @@ export class Engine {
 
     const { base_asset, quote_asset } = this.parseMarket(market);
     const orderBook = this.getOrCreateOrderBook(base_asset, quote_asset);
+    
     let matchingPrice = price;
-    let quoteAmountToLock = price * quantity;
     let resolvedQuantity = quantity;
+    let quoteAmountToLock = 0;
 
+    // --- THE MAGIC: CONVERT MARKET TO LIMIT ---
     if (orderType === "MARKET") {
       if (side === "BUY") {
         if (isQuoteAmountBuy) {
-          // work out how much base asset the stated spend amount actually
-          // buys against the current book
-          resolvedQuantity = this.estimateMarketBuyQuantityForBudget(
-            orderBook,
-            quoteAmount as number
-          );
-          // lock exactly the stated budget — the existing MARKET reconciliation
-          // in updateBalances refunds whatever portion doesn't get spent
-          quoteAmountToLock = quoteAmount as number;
+          const { worstPrice } = this.estimateMarketBuyQuantityForBudget(orderBook, quoteAmount as number);
+          
+          // 2. Set our limit price with the buffer
+          matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
+          
+          // 3. Since we raised the price slightly, recalculate the exact quantity they can buy with their budget
+          resolvedQuantity = (quoteAmount as number) / matchingPrice;
         } else {
-          const estimatedCost = this.estimateMarketBuyCost(orderBook, quantity);
-          // pad the lock so a price move between this estimate and the match
-          // below can never leave the order under-funded
-          quoteAmountToLock = estimatedCost * (1 + MARKET_SLIPPAGE_BUFFER);
+          // Normal Market buy with strict quantity
+          const { worstPrice } = this.estimateMarketBuyCost(orderBook, quantity);
+          matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
         }
-        matchingPrice = Number.MAX_SAFE_INTEGER;
-      } else {
-        // selling locks the exact base quantity below — no price estimate
-        // involved on this side, so no buffer is needed
-        this.assertMarketSellLiquidity(orderBook, quantity);
-        quoteAmountToLock = 0;
-        matchingPrice = 0;
+      } else { 
+        // MARKET SELL
+        const { worstPrice } = this.assertMarketSellLiquidity(orderBook, quantity);
+        matchingPrice = worstPrice * (1 - MARKET_SLIPPAGE_BUFFER);
+        // Safety check to ensure extreme slippage doesn't push price below 0
+        matchingPrice = Math.max(0, matchingPrice);
       }
+      
+      // Bam. We now have a precise price and quantity. Treat as a LIMIT order moving forward.
+      orderType = "LIMIT";
+    }
+
+    // Now strictly handle as LIMIT
+    if (side === "BUY") {
+       // If they provided a strict quote budget, lock exactly that amount to avoid JS floating-point dust. 
+       // Otherwise, lock standard Price * Quantity.
+       quoteAmountToLock = isQuoteAmountBuy ? (quoteAmount as number) : (matchingPrice * resolvedQuantity);
+    } else {
+       quoteAmountToLock = 0; // Sells lock the base asset via resolvedQuantity in checkAndLock
     }
 
     // check and lock funds (throws if insufficient)
@@ -582,7 +602,8 @@ export class Engine {
         Math.random().toString(36).substring(2, 15),
     };
 
-    const { fills, executedQuantity } = orderBook.addOrder(order, orderType === "LIMIT");
+    // Passed true for the isLimit boolean since we explicitly forced orderType to "LIMIT"
+    const { fills, executedQuantity } = orderBook.addOrder(order, true);
 
     this.updateBalances(
       ClientId,
@@ -590,7 +611,7 @@ export class Engine {
       base_asset,
       quote_asset,
       side,
-      price,
+      matchingPrice, // Passed matchingPrice so the system knows the actual execution bounds
       orderType,
       quoteAmountToLock,
       resolvedQuantity

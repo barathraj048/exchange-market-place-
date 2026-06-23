@@ -17,6 +17,15 @@ interface Ticker {
   trades: string;
 }
 
+// 1. Define the strict list of our 5 chosen markets
+const ALLOWED_MARKETS = [
+  "BTC_USDC",
+  "ETH_USDC",
+  "SOL_USDC",
+  "BNB_USDC",
+  "XRP_USDC",
+];
+
 function MarketDetails() {
   const [loading, setLoading] = useState(true);
   const [tickers, setTickers] = useState<Ticker[]>([]);
@@ -26,10 +35,18 @@ function MarketDetails() {
     const fetchTickers = async () => {
       try {
         const data = await getTickers();
-        const sorted = data.sort(
-          (a, b) => parseFloat(b.trades) - parseFloat(a.trades)
+        
+        // 2. Filter out any test/junk pairs from the DB, strictly keeping our Top 5
+        const filteredTickers = data.filter((t: Ticker) => 
+          ALLOWED_MARKETS.includes(t.symbol)
         );
-        setTickers(sorted.slice(0,5));
+
+        // 3. Sort by volume/trades to keep the most active ones at the top
+        const sorted = filteredTickers.sort(
+          (a: Ticker, b: Ticker) => parseFloat(b.trades) - parseFloat(a.trades)
+        );
+        
+        setTickers(sorted);
       } catch (err) {
         console.error("Error fetching tickers:", err);
       } finally {
@@ -40,10 +57,10 @@ function MarketDetails() {
     fetchTickers();
   }, []);
 
-  if (loading) return <div className="text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-gray-400 p-4">Loading Market Data...</div>;
 
   return (
-    <div>
+    <div className="w-full">
       {tickers.map((t) => {
         const {
           symbol,
@@ -55,6 +72,7 @@ function MarketDetails() {
         } = t;
 
         const [baseSymbol, quoteSymbol] = symbol.split("_");
+        // Using your local SVG API wrapper
         const iconUrl = `http://localhost:3000/api/color/${baseSymbol.toLowerCase()}/600`;
 
         return (
@@ -71,24 +89,31 @@ function MarketDetails() {
                 height={24}
                 className="rounded-full bg-gray-900"
                 onError={(e) => {
+                  // Fallback if the SVG API fails
                   e.currentTarget.src = "/default.svg"; 
                 }}
               />
-              <span className="font-medium">
+              <span className="font-medium text-white">
                 {baseSymbol}/{quoteSymbol}
               </span>
             </div>
 
-            <p className="w-1/5 text-right">{parseFloat(lastPrice).toFixed(4)}</p>
-            <p className="w-1/5 text-right">{parseFloat(volume).toFixed(2)}</p>
-            <p className="w-1/5 text-right">{parseFloat(quoteVolume).toFixed(2)}</p>
+            <p className="w-1/5 text-right font-mono">
+              ${parseFloat(lastPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+            </p>
+            <p className="w-1/5 text-right font-mono hidden md:block">
+              {parseFloat(volume).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </p>
+            <p className="w-1/5 text-right font-mono hidden md:block">
+              ${parseFloat(quoteVolume).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </p>
             <p
-              className={`w-1/5 text-right ${
-                parseFloat(priceChange) > 0 ? "text-green-400" : "text-red-400"
+              className={`w-1/5 text-right font-mono font-medium ${
+                parseFloat(priceChange) >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {parseFloat(priceChange).toFixed(2)} (
-              {(parseFloat(priceChangePercent) * 100).toFixed(2)}%)
+              {parseFloat(priceChange) >= 0 ? "+" : ""}
+              {(parseFloat(priceChangePercent) * 100).toFixed(2)}%
             </p>
           </div>
         );
@@ -96,4 +121,5 @@ function MarketDetails() {
     </div>
   );
 }
+
 export default MarketDetails;

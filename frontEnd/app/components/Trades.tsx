@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { SignalingManager } from '../utils/SignalingManager'
 
-export function Trades({market}:{market:string}) {
+export function Trades({ market }: { market: string }) {
    const [prices, setPrices] = useState<string[]>([])
    const [quantities, setQuantities] = useState<string[]>([])
    const [times, setTimes] = useState<string[]>([])
@@ -15,27 +15,25 @@ export function Trades({market}:{market:string}) {
          try {
             setIsLoading(true)
             
-            // Fetch last 20 trades from Backpack API
-            const response = await fetch(
-               `https://api.backpack.exchange/api/v1/trades?symbol=${market}&limit=20`
-            )
+            // FIX: Pointing to your local Next.js API proxy instead of Backpack's public REST endpoint
+            const response = await fetch(`/api/trades?symbol=${market}&limit=20`)
             
             if (response.ok) {
                const trades = await response.json()
                
-               // Backpack returns trades in chronological order, reverse to show newest first
+               // Reverse chronological order adjustment if needed based on engine response layout
                const reversedTrades = [...trades].reverse()
                
                setPrices(reversedTrades.map((t: any) => t.price))
                setQuantities(reversedTrades.map((t: any) => t.quantity))
                setTimes(reversedTrades.map((t: any) => 
-                  new Date(parseInt(t.timestamp)).toLocaleTimeString()
+                  new Date(parseInt(t.timestamp || t.t)).toLocaleTimeString()
                ))
-               // Backpack uses 'm' for maker (sell) and 't' for taker (buy)
-               setIsBuyerMaker(reversedTrades.map((t: any) => t.side === 'Bid'))
+               // Fallback checks depending on how your Express engine maps transaction sides
+               setIsBuyerMaker(reversedTrades.map((t: any) => t.side === 'Bid' || t.isBuyerMaker === true))
             }
          } catch (err) {
-            console.error("Error loading historical trades:", err)
+            console.error("Error loading historical trades from local engine:", err)
          } finally {
             setIsLoading(false)
          }
@@ -44,9 +42,9 @@ export function Trades({market}:{market:string}) {
       loadHistoricalTrades()
    }, [market])
 
-   // Subscribe to real-time trades
+   // Subscribe to real-time public feeds directly from Backpack for live UI updates
    useEffect(() => {
-      if (isLoading) return // Wait for historical data to load first
+      if (isLoading) return 
       
       const type = "trade"
       const id = `trade-${market}`
@@ -78,32 +76,30 @@ export function Trades({market}:{market:string}) {
 
    return (
       <div className='w-full'>
-         {/* Header Row */}
-         <div className='flex justify-between text-xs text-slate-400 pb-2 border-b border-slate-800'>
+         <div className='flex justify-between text-xs text-slate-400 pb-2 border-b border-slate-800 font-medium'>
             <div className='flex-1 text-left'>Price</div>
             <div className='flex-1 text-right'>Qty</div>
             <div className='flex-1 text-right'>Time</div>
          </div>
          
-         {/* Data Rows */}
-         <div className='text-sm'>
+         <div className='text-sm font-mono'>
             {isLoading ? (
-               <div className='text-slate-500 text-center py-4 animate-pulse'>
-                  Loading trades...
+               <div className='text-slate-500 text-center py-4 animate-pulse text-xs'>
+                  Loading market history...
                </div>
             ) : prices.length === 0 ? (
-               <div className='text-slate-500 text-center py-4'>No trades yet...</div>
+               <div className='text-slate-500 text-center py-4 text-xs'>No trades executed...</div>
             ) : (
                prices.map((price, index) => (
                   <div 
                      key={`${price}-${times[index]}-${index}`} 
-                     className={`flex justify-between py-1 hover:bg-slate-800/50 transition-colors`}
+                     className='flex justify-between py-1 hover:bg-slate-800/40 transition-colors'
                   >
                      <div className={`flex-1 text-left ${isBuyerMaker[index] ? 'text-green-400' : 'text-red-400'}`}>
-                        {price}
+                        {parseFloat(price).toFixed(4)}
                      </div>
-                     <div className="flex-1 text-right text-gray-50">{quantities[index]}</div>
-                     <div className="flex-1 text-right text-slate-400">{times[index]}</div>
+                     <div className="flex-1 text-right text-gray-200">{parseFloat(quantities[index]).toFixed(4)}</div>
+                     <div className="flex-1 text-right text-slate-500 text-xs flex items-center justify-end">{times[index]}</div>
                   </div>
                ))
             )}
