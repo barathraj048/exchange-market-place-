@@ -104,11 +104,11 @@ export class orderBook {
             ask.filled += tradeQty;
             exicutedQuantity += tradeQty;
             this.currentPrice = ask.price;
-
+        
             fills.push({
                 price: ask.price,
                 quantity: tradeQty,
-                tradeId: (this.lastTradeId++).toString(),
+                tradeId: Math.random().toString(36).substring(2, 10) + Date.now().toString(36),
                 otherUserId: ask.userId,
                 markerOrderId: ask.orderId
             });
@@ -149,7 +149,7 @@ export class orderBook {
             fills.push({
                 price: bid.price,
                 quantity: tradeQty,
-                tradeId: (this.lastTradeId++).toString(),
+                tradeId: Math.random().toString(36).substring(2, 10) + Date.now().toString(36),
                 otherUserId: bid.userId,
                 markerOrderId: bid.orderId
             });

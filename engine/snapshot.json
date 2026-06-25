@@ -49,7 +49,19 @@
           "available": 10000000,
           "locked": 0
         },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
           "available": 10000000,
           "locked": 0
         }
@@ -78,7 +90,19 @@
           "available": 10000000,
           "locked": 0
         },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
           "available": 10000000,
           "locked": 0
         }
@@ -107,7 +131,2684 @@
           "available": 10000000,
           "locked": 0
         },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
         "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_1",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_2",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_3",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_4",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_5",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_6",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_7",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_8",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_9",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_10",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_11",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_12",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_13",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_14",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_15",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_16",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_17",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_18",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_19",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_20",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_21",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_22",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_23",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_24",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_25",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_26",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_27",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_28",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_29",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_30",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_31",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_32",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_33",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_34",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_35",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_36",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_37",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_38",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_39",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_40",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_41",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_42",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_43",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_44",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_45",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_46",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_47",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_48",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_49",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_50",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_0",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_1",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_2",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_3",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_4",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_5",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_6",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_7",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_8",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_maker_9",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_taker_0",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_taker_1",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_taker_2",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_taker_3",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
+          "available": 10000000,
+          "locked": 0
+        }
+      }
+    ],
+    [
+      "trader_taker_4",
+      {
+        "USD": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "INR": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "USDC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "TATA": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "SOL": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BTC": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "ETH": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "BNB": {
+          "available": 10000000,
+          "locked": 0
+        },
+        "XRP": {
           "available": 10000000,
           "locked": 0
         }

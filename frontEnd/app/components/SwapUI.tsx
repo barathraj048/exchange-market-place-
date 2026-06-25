@@ -5,8 +5,8 @@ export function SwapUI({ market }: { market: string }) {
   const [balance, setBalance] = useState<{[key: string]: {available: number, locked: number}}>({});
   const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
   const [type, setType] = useState("limit");
-  const [price, setPrice] = useState(0);
-  const [quantity, setQuantity] = useState(0);
+  const [price, setPrice] = useState<string | number>("");
+  const [quantity, setQuantity] = useState<string | number>("");
   const [depositAmount, setDepositAmount] = useState(0);
   const [showDeposit, setShowDeposit] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -133,7 +133,7 @@ export function SwapUI({ market }: { market: string }) {
   };
 
   const sendTransaction = async (side: "buy" | "sell") => {
-    if (type === "limit" && price <= 0) return alert("Price required");
+    if (type === "limit" && Number(price) <= 0) return alert("Price required");
     if (type === "limit" && !quantity) return alert("quantity required");
 
     setLoading(true);
@@ -143,8 +143,8 @@ export function SwapUI({ market }: { market: string }) {
       market,
       side,
       type,
-      price ,
-      quantity :type === "limit" ? quantity : undefined,
+      price: Number(price),
+      quantity: type === "limit" ? Number(quantity) : undefined,
     };
 
     try {
@@ -186,8 +186,8 @@ export function SwapUI({ market }: { market: string }) {
         return;
       }
 
-      if (type === "limit" && price > 0) {
-        const qty = (available * percentage) / price;
+      if (type === "limit" && Number(price) > 0) {
+        const qty = (available * percentage) / Number(price);
         setQuantity(Number(qty.toFixed(8)));
       }
     } else {
@@ -229,20 +229,20 @@ export function SwapUI({ market }: { market: string }) {
             <div className="bg-[#1C1E2C] p-2.5 rounded-lg border border-[#26293B]">
               <div className="text-[#848694] font-medium mb-0.5">{primaryCashAsset}</div>
               <div className="text-white font-semibold text-sm">
-                {primaryCashBalance.available?.toFixed(2) || "0.00"}
+                {primaryCashBalance.available?.toFixed(8) || "0.00"}
               </div>
               <div className="text-[#555768] text-[10px] mt-0.5">
-                Locked: {primaryCashBalance.locked?.toFixed(2) || "0.00"}
+                Locked: {primaryCashBalance.locked?.toFixed(8) || "0.00"}
               </div>
             </div>
 
             <div className="bg-[#1C1E2C] p-2.5 rounded-lg border border-[#26293B]">
               <div className="text-[#848694] font-medium mb-0.5">{baseAsset}</div>
               <div className="text-white font-semibold text-sm">
-                {balance[baseAsset]?.available?.toFixed(2) || "0.00"}
+                {balance[baseAsset]?.available?.toFixed(8) || "0.00"}
               </div>
               <div className="text-[#555768] text-[10px] mt-0.5">
-                Locked: {balance[baseAsset]?.locked?.toFixed(2) || "0.00"}
+                Locked: {balance[baseAsset]?.locked?.toFixed(8) || "0.00"}
               </div>
             </div>
           </div>
@@ -325,8 +325,8 @@ export function SwapUI({ market }: { market: string }) {
               <span className="text-[#848694]">Available</span>
               <span className="font-medium text-white">
                 {activeTab === "buy"
-                  ? `${availableQuote.toFixed(2)} ${quoteAsset}`
-                  : `${availableBase.toFixed(2)} ${baseAsset}`}
+                  ? `${availableQuote.toFixed(8)} ${quoteAsset}`
+                  : `${availableBase.toFixed(8)} ${baseAsset}`}
               </span>
             </div>
 
@@ -337,9 +337,9 @@ export function SwapUI({ market }: { market: string }) {
                   step="0.01"
                   placeholder="0.00"
                   type="number"
-                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-14 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors"
+                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-16 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   value={price || "" }
-                  onChange={(e) => setPrice(Number(e.target.value))}
+                  onChange={(e) => setPrice(e.target.value)}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
                   <img src="/usdc.webp" className="w-4 h-4 rounded-full" alt="USDC" onError={(e) => e.currentTarget.style.display='none'} />
@@ -356,9 +356,9 @@ export function SwapUI({ market }: { market: string }) {
                   placeholder="0.00"
                   type="number"
                   disabled={type === "market"}
-                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-14 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] transition-colors"
+                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3  pr-16 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   value={type === "market"?"":quantity || ""}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  onChange={(e) => setQuantity(e.target.value)}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
                   <img src={src} className="w-4 h-4 rounded-full" alt={baseAsset} onError={(e) => e.currentTarget.style.display='none'} />

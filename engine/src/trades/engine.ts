@@ -511,7 +511,7 @@ export class Engine {
   }
 
   // 2. The Unified createOrder Method
-  createOrder(
+createOrder(
     quantity: number,
     price: number,
     side: "BUY" | "SELL",
@@ -520,7 +520,11 @@ export class Engine {
     orderType: "LIMIT" | "MARKET" ,
     quoteAmount?: number 
   ) {
-    quoteAmount=price
+    quoteAmount = price;
+    
+    // 1. Save the true original order type before conversion
+    const originalOrderType = orderType; 
+
     if (side !== "BUY" && side !== "SELL") {
       throw new Error("Invalid order side");
     }
@@ -550,44 +554,33 @@ export class Engine {
     let resolvedQuantity = quantity;
     let quoteAmountToLock = 0;
 
-    // --- THE MAGIC: CONVERT MARKET TO LIMIT ---
+    // --- KEEPING THE ORIGINAL BUFFER MATH EXACTLY AS BEFORE ---
     if (orderType === "MARKET") {
       if (side === "BUY") {
         if (isQuoteAmountBuy) {
           const { worstPrice } = this.estimateMarketBuyQuantityForBudget(orderBook, quoteAmount as number);
           
-          // 2. Set our limit price with the buffer
           matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
-          
-          // 3. Since we raised the price slightly, recalculate the exact quantity they can buy with their budget
           resolvedQuantity = (quoteAmount as number) / matchingPrice;
         } else {
-          // Normal Market buy with strict quantity
           const { worstPrice } = this.estimateMarketBuyCost(orderBook, quantity);
           matchingPrice = worstPrice * (1 + MARKET_SLIPPAGE_BUFFER);
         }
       } else { 
-        // MARKET SELL
         const { worstPrice } = this.assertMarketSellLiquidity(orderBook, quantity);
         matchingPrice = worstPrice * (1 - MARKET_SLIPPAGE_BUFFER);
-        // Safety check to ensure extreme slippage doesn't push price below 0
         matchingPrice = Math.max(0, matchingPrice);
       }
       
-      // Bam. We now have a precise price and quantity. Treat as a LIMIT order moving forward.
       orderType = "LIMIT";
     }
 
-    // Now strictly handle as LIMIT
     if (side === "BUY") {
-       // If they provided a strict quote budget, lock exactly that amount to avoid JS floating-point dust. 
-       // Otherwise, lock standard Price * Quantity.
        quoteAmountToLock = isQuoteAmountBuy ? (quoteAmount as number) : (matchingPrice * resolvedQuantity);
     } else {
-       quoteAmountToLock = 0; // Sells lock the base asset via resolvedQuantity in checkAndLock
+       quoteAmountToLock = 0; 
     }
 
-    // check and lock funds (throws if insufficient)
     this.checkAndLock(resolvedQuantity, quoteAmountToLock, side, base_asset, quote_asset, ClientId);
 
     const order: order = {
@@ -602,17 +595,17 @@ export class Engine {
         Math.random().toString(36).substring(2, 15),
     };
 
-    // Passed true for the isLimit boolean since we explicitly forced orderType to "LIMIT"
     const { fills, executedQuantity } = orderBook.addOrder(order, true);
 
+    // 2. FIX: Pass originalOrderType ("MARKET") so the cleanup block triggers perfectly
     this.updateBalances(
       ClientId,
       fills,
       base_asset,
       quote_asset,
       side,
-      matchingPrice, // Passed matchingPrice so the system knows the actual execution bounds
-      orderType,
+      matchingPrice, 
+      originalOrderType, 
       quoteAmountToLock,
       resolvedQuantity
     );
@@ -843,9 +836,26 @@ updateBalances(
     }
   }
 
-  setBaseBalances() {
-    // seed balances for users 1,2,5
+setBaseBalances() {
+    // 1. Existing manual test accounts
     const seed = ["1", "2", "5"];
+    
+    // 2. Add the 50 Seed Liquidity Bot Accounts
+    for (let i = 1; i <= 50; i++) {
+        seed.push(`trader_${i}`);
+    }
+
+    // 3. Add the 10 Master Maker Accounts
+    for (let i = 0; i < 10; i++) {
+        seed.push(`trader_maker_${i}`);
+    }
+
+    // 4. Add the 5 Master Taker Accounts
+    for (let i = 0; i < 5; i++) {
+        seed.push(`trader_taker_${i}`);
+    }
+
+    // Distribute 10M of every asset to every account
     seed.forEach((id) => {
       this.balances.set(id, {
         [BASE_CURRENCY]: { available: 10_000_000, locked: 0 },
@@ -853,6 +863,10 @@ updateBalances(
         USDC: { available: 10_000_000, locked: 0 },
         TATA: { available: 10_000_000, locked: 0 },
         SOL: { available: 10_000_000, locked: 0 },
+        BTC: { available: 10_000_000, locked: 0 },
+        ETH: { available: 10_000_000, locked: 0 },
+        BNB: { available: 10_000_000, locked: 0 },
+        XRP: { available: 10_000_000, locked: 0 },
       });
     });
   }

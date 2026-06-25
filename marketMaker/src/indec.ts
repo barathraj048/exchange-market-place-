@@ -12,41 +12,40 @@ const SUPPORTED_MARKETS = [
   { symbol: "XRP_USDC", baseAsset: "XRP", spread: 0.002, minQty: 10, maxQty: 500 },
 ];
 
-const TARGET_OPEN_ORDERS_PER_SIDE = 40; // Depth per side per market
-const BOT_CYCLE_MS = 2000; // Refreshes books every 2 seconds
+const TARGET_OPEN_ORDERS_PER_SIDE = 40; 
+const BOT_CYCLE_MS = 2000; 
 
-// In-memory cache for real-world prices fetched from Backpack
 let livePrices: Record<string, number> = {};
 
 // 2. Main Execution Loop
 async function startMasterMaker() {
   console.log("🚀 Initializing Master Market Maker...");
   
-  // Create 10 dedicated maker accounts and fund them
   await ensureMakerAccounts();
 
-  // Fetch real prices before doing anything
   console.log("📡 Fetching initial price oracle data...");
+  
+  // Force a successful price fetch BEFORE continuing
   await updateLivePrices();
+  while (Object.keys(livePrices).length === 0) {
+      console.log("Waiting for price oracle...");
+      await new Promise(res => setTimeout(res, 1000));
+      await updateLivePrices();
+  }
+
   setInterval(updateLivePrices, 5000);
 
-  // Give price fetcher a second to grab initial data
-  await new Promise(res => setTimeout(res, 1000));
-
-  // --- BOOTSTRAP PHASE ---
-  // Create the initial "Liquidity Wall" so the engine isn't empty on the first tick
   console.log("🧱 Bootstrapping initial order books (Liquidity Walls)...");
   await bootstrapOrderBook();
 
   console.log("🌊 Liquidity floodgates opened! Managing 5 markets concurrently...");
 
-  // Spin up an isolated bot loop for each market
   SUPPORTED_MARKETS.forEach((market) => {
     runMarketLoop(market);
   });
 }
 
-// 3. Price Oracle (Syncs with Backpack)
+// 3. Price Oracle
 async function updateLivePrices() {
   try {
     const res = await axios.get(BACKPACK_API_URL);
@@ -59,11 +58,11 @@ async function updateLivePrices() {
       }
     });
   } catch (error: any) {
-    console.error("⚠️ Failed to fetch live prices from Backpack. Using previous cache.");
+    console.error("⚠️ Failed to fetch live prices from Backpack.");
   }
 }
 
-// --- NEW: The Bootstrapper ---
+// 4. The Bootstrapper
 async function bootstrapOrderBook() {
   let bootstrapPromises: Promise<any>[] = [];
 
@@ -73,12 +72,10 @@ async function bootstrapOrderBook() {
 
     console.log(`   -> Seeding ${market.symbol} around $${midPrice}...`);
 
-    // Create 50 bids stepping down, and 50 asks stepping up
     for (let i = 1; i <= 50; i++) {
       const bidUser = `trader_maker_${Math.floor(Math.random() * 10)}`;
       const askUser = `trader_maker_${Math.floor(Math.random() * 10)}`;
 
-      // Widen the spread artificially for the deep book
       const bidPrice = midPrice - (market.spread * i * 0.5); 
       const askPrice = midPrice + (market.spread * i * 0.5);
       
@@ -104,13 +101,12 @@ async function bootstrapOrderBook() {
     }
   }
 
-  // Execute the massive batch of resting orders
   await executeBatched(bootstrapPromises, 20);
   console.log("✅ Bootstrapping complete. Order books are deep.");
 }
 
 
-// 4. Per-Market Bot Logic (High Frequency Loop)
+// 5. High Frequency Loop
 async function runMarketLoop(marketDef: typeof SUPPORTED_MARKETS[0]) {
   const { symbol, spread, minQty, maxQty } = marketDef;
 
@@ -121,16 +117,13 @@ async function runMarketLoop(marketDef: typeof SUPPORTED_MARKETS[0]) {
       return;
     }
 
-    // Pick a random maker account for this cycle
     const userId = `trader_maker_${Math.floor(Math.random() * 10)}`;
-
     const openOrdersRes = await axios.get(`${LOCAL_API_URL}/order/open?userId=${userId}&market=${symbol}`);
     const openOrders = openOrdersRes.data;
 
     const totalBids = openOrders.filter((o: any) => String(o.side).toLowerCase() === "buy").length;
     const totalAsks = openOrders.filter((o: any) => String(o.side).toLowerCase() === "sell").length;
 
-    // Clean up stale orders
     const cancelledBids = await cancelBidsTooFar(openOrders, midPrice, symbol, userId);
     const cancelledAsks = await cancelAsksTooFar(openOrders, midPrice, symbol, userId);
 
@@ -171,7 +164,7 @@ async function runMarketLoop(marketDef: typeof SUPPORTED_MARKETS[0]) {
       }
     }
 
-    // Taker Volume: Eat the resting orders to generate trades!
+    // Taker Volume
     if (Math.random() < 0.3) {
       const isBuy = Math.random() > 0.5;
       const mktQty = minQty + (Math.random() * (maxQty - minQty) * 0.5);
@@ -180,11 +173,10 @@ async function runMarketLoop(marketDef: typeof SUPPORTED_MARKETS[0]) {
           quantity: mktQty.toFixed(4),
           side: isBuy ? "buy" : "sell",
           type: "market",
-          userId: `trader_taker_${Math.floor(Math.random() * 5)}` // Separate taker accounts
+          userId: `trader_taker_${Math.floor(Math.random() * 5)}` 
       }));
     }
 
-    // Execute batch
     await executeBatched(newOrderPromises, 15);
 
   } catch (e: any) {
@@ -196,7 +188,7 @@ async function runMarketLoop(marketDef: typeof SUPPORTED_MARKETS[0]) {
   setTimeout(() => runMarketLoop(marketDef), BOT_CYCLE_MS);
 }
 
-// 5. Cleanup Helpers
+// 6. Cleanup & Utils
 async function cancelBidsTooFar(openOrders: any[], midPrice: number, market: string, userId: string) {
   let promises: Promise<any>[] = [];
   openOrders.forEach(o => {
@@ -221,16 +213,13 @@ async function cancelAsksTooFar(openOrders: any[], midPrice: number, market: str
   return promises.length;
 }
 
-// 6. Utility Functions
 async function ensureMakerAccounts() {
   const accountPromises: Promise<any>[] = [];
   
-  // 10 Maker accounts + 5 Taker accounts
   for (let i = 0; i < 15; i++) {
     const isMaker = i < 10;
     const userId = isMaker ? `trader_maker_${i}` : `trader_taker_${i - 10}`;
     
-    // Give each account massive balances
     accountPromises.push(axios.post(`${LOCAL_API_URL}/transaction/deposit`, { userId, amount: 10_000_000, asset: "USDC" }));
     SUPPORTED_MARKETS.forEach(m => {
        accountPromises.push(axios.post(`${LOCAL_API_URL}/transaction/deposit`, { userId, amount: 1_000_000, asset: m.baseAsset }));
@@ -245,9 +234,8 @@ async function executeBatched(requests: Promise<any>[], batchSize: number) {
   for (let i = 0; i < requests.length; i += batchSize) {
     const batch = requests.slice(i, i + batchSize);
     await Promise.allSettled(batch); 
-    await new Promise(res => setTimeout(res, 20)); // brief pause
+    await new Promise(res => setTimeout(res, 20)); 
   }
 }
 
-// Start
 startMasterMaker();
