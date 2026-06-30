@@ -60,7 +60,6 @@ export class Engine {
       this.setBaseBalances();
     }
 
-    // periodic snapshot save (synchronous write to keep things simple)
     setInterval(() => {
       try {
         this.saveSnapshot();
@@ -537,7 +536,7 @@ createOrder(
       throw new Error("Price must be greater than 0");
     }
     
-    const isQuoteAmountBuy = side === "BUY" && (!Number.isFinite(quantity) || quantity <= 0);
+    const isQuoteAmountBuy = (side === "BUY" || side==="SELL") && (!Number.isFinite(quantity) || quantity <= 0);
 
     if (isQuoteAmountBuy) {
       if (!Number.isFinite(quoteAmount) || (quoteAmount as number) <= 0) {

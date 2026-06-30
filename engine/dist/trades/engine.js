@@ -32,7 +32,6 @@ export class Engine {
             this.orderBook = this.getDefaultOrderBooks();
             this.setBaseBalances();
         }
-        // periodic snapshot save (synchronous write to keep things simple)
         setInterval(() => {
             try {
                 this.saveSnapshot();
@@ -435,7 +434,7 @@ export class Engine {
         if (orderType === "LIMIT" && (!Number.isFinite(price) || price <= 0)) {
             throw new Error("Price must be greater than 0");
         }
-        const isQuoteAmountBuy = side === "BUY" && (!Number.isFinite(quantity) || quantity <= 0);
+        const isQuoteAmountBuy = (side === "BUY" || side === "SELL") && (!Number.isFinite(quantity) || quantity <= 0);
         if (isQuoteAmountBuy) {
             if (!Number.isFinite(quoteAmount) || quoteAmount <= 0) {
                 throw new Error("Quantity or quoteAmount must be greater than 0");

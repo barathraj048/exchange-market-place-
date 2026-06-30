@@ -133,18 +133,23 @@ export function SwapUI({ market }: { market: string }) {
   };
 
   const sendTransaction = async (side: "buy" | "sell") => {
-    if (type === "limit" && Number(price) <= 0) return alert("Price required");
-    if (type === "limit" && !quantity) return alert("quantity required");
+    if (type === "limit") {
+          if (Number(price) <= 0) return alert("Price required");
+          if (Number(quantity) <= 0) return alert("Quantity required");
+      } else if (type === "market") {
+          if (side === "buy" && Number(price) <= 0) return alert("Total USDC to spend required");
+          if (side === "sell" && Number(quantity) <= 0) return alert("Quantity to sell required");
+        }
 
     setLoading(true);
-
+    console.log(price)
     const payload = {
       userId,
       market,
       side,
       type,
-      price: Number(price),
-      quantity: type === "limit" ? Number(quantity) : undefined,
+      price: type === "market" && side === "sell" ? 0 : Number(price),
+      quantity: type === "market" && side === "buy" ? undefined : Number(quantity),
     };
 
     try {
@@ -166,8 +171,8 @@ export function SwapUI({ market }: { market: string }) {
 
       alert(`${side.toUpperCase()} order placed successfully!`);
 
-      setPrice(0);
-      setQuantity(0);
+      setPrice("");
+      setQuantity("");
 
       await fetchBalance();
     } catch (err: any) {
@@ -331,14 +336,17 @@ export function SwapUI({ market }: { market: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-[#848694] font-medium">Price</label>
+              <label className="text-xs text-[#848694] font-medium">
+                {type === "market" && activeTab === "buy" ? "Total to Spend" : "Price"}
+              </label>
               <div className="relative flex items-center">
                 <input
                   step="0.01"
-                  placeholder="0.00"
-                  type="number"
+                  placeholder={type === "market" && activeTab === "sell" ? "Market Price" : "0.00"}
+                  type={type === "market" && activeTab === "sell" ? "text" : "number"} 
+                  disabled={type === "market" && activeTab === "sell"}
                   className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-16 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value={price || "" }
+                  value={type === "market" && activeTab === "sell" ? "" : price || ""}
                   onChange={(e) => setPrice(e.target.value)}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
@@ -353,11 +361,11 @@ export function SwapUI({ market }: { market: string }) {
               <div className="relative flex items-center">
                 <input
                   step="0.01"
-                  placeholder="0.00"
-                  type="number"
-                  disabled={type === "market"}
-                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3  pr-16 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value={type === "market"?"":quantity || ""}
+                  placeholder={type === "market" && activeTab === "buy" ? "Est. by Market" : "0.00"}
+                  type={type === "market" && activeTab === "buy" ? "text" : "number"}
+                  disabled={type === "market" && activeTab === "buy"}
+                  className="w-full h-11 rounded-lg border border-[#1E202B] bg-[#141622] px-3 pr-16 text-right font-mono text-lg text-white placeholder-[#444655] focus:outline-none focus:border-[#26293B] disabled:opacity-40 disabled:bg-[#0E0F14] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value={type === "market" && activeTab === "buy" ? "" : quantity || ""}
                   onChange={(e) => setQuantity(e.target.value)}
                 />
                 <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
